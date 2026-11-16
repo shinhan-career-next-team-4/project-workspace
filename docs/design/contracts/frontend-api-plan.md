@@ -2,6 +2,14 @@
 
 > **최종본** (2026-11-16). v3에 쟁점 결정 D-074(목표명 100자), D-075(GoalType 7개), D-076(로컬 데모, 임시 — 원격 배포로 바뀔 수 있어 쿠키 `Secure`·서명 키·허용 출처는 설정값)을 반영했다. 본문의 "쟁점 X-n이 다르면 …" 문장은 기록용이다.
 > 협상 기록: `frontend-api-plan-v1.md` → 검토 2건 → `-v2.md` → 재검토 2건 → `-v3.md`, 합의안 `frontend-api-plan-proposal.md`. 이 문서와 `frontend-api-chat.md`(#12-b)를 moeun #12가 `docs/api/frontend-api.md`와 `frontend/src/mocks/`로 옮긴다.
+>
+> **최종본 보충 (2026-11-16, D-077~082 임시, 본문보다 우선)**
+> - **D-077** P-3 응답 유실(네트워크·502·비JSON): 입력값 유지 + `common.networkError` + `loadPlan()`으로 `revision`만 맞춤(C12a-6-5 "부르는 때" 표에 추가). → #48, #13
+> - **D-078** 로그인·로그아웃 성공 시 `BroadcastChannel("moeun-auth")`로 알림 → 받은 탭은 store 비우고 `loadPlan()`부터. → #13, #47, #58(시연 절차)
+> - **D-079** 허용 출처 = CORS 허용 목록(로컬 기본 비움). JWT 서명 키 없으면 기동 실패, `local` 프로필만 고정 개발 키. → #16, #58
+> - **D-080** 정수 금액 필드가 `long` 범위 밖(큰 정수) → `OUT_OF_RANGE`. 비정수 숫자는 본문대로 422 `NOT_INTEGER`, 문자열은 400 `MALFORMED_REQUEST`(Q-070 정정). 프론트는 `Number` 변환 없이 십진 문자열 결과를 JSON 숫자로. → #17, #48
+> - **D-081** 목표명: 빈 값·공백뿐 `REQUIRED`, 100자 초과 `OUT_OF_RANGE`, trim 저장, UTF-16, `CUSTOM` 아니면 `null` 저장. → #17, #19
+> - **D-082** 보유 자산 칸은 `0`으로 시작, 지우고 저장하면 `REQUIRED`. → #48
 
 
 > 작성: tech-architect, 2026-11-16. `/negotiate-contract` **4단계(재검토 반영) 마무리본**. 재검토는 끝났다(더 반복하지 않음). 쟁점 X-1~X-3을 사람이 정하면 이 문서를 최종본 `frontend-api-plan.md`로 확정한다.
