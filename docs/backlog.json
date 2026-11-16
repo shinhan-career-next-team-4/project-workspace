@@ -1487,7 +1487,10 @@
   "status": "ready",
   "depends_on": [
    "T-024",
-   "T-034"
+   "T-034",
+   "T-013",
+   "T-064",
+   "T-011"
   ],
   "requirements": [
    "FR-AI-07",
@@ -1528,7 +1531,8 @@
   "status": "ready",
   "depends_on": [
    "T-025",
-   "T-036"
+   "T-036",
+   "T-013"
   ],
   "requirements": [
    "FR-AI-07",
@@ -1939,8 +1943,8 @@
  },
  {
   "id": "T-047",
-  "title": "[front] 목 제거: 프론트를 실제 Spring API에 연결(로그인·입력·결과·적용)",
-  "team": "A",
+  "title": "[front] 목 제거: 프론트를 실제 Spring API에 연결(로그인·입력·결과·적용·대화)",
+  "team": "common",
   "area": [
    "frontend"
   ],
@@ -1953,7 +1957,11 @@
    "T-025",
    "T-039",
    "T-042",
-   "T-043"
+   "T-043",
+   "T-037",
+   "T-044",
+   "T-045",
+   "T-046"
   ],
   "requirements": [
    "FR-INP-10",
