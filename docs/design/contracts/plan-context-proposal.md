@@ -1,5 +1,7 @@
 # planContext 계약 합의안 (moeun #11)
 
+> **결정 완료** (2026-11-16): X-1→D-059, X-2→D-060, X-3→D-061, X-4→D-062 (모두 A). 최종본: `plan-context.md`.
+
 > 작성: tech-architect, 2026-11-16. `/negotiate-contract` 4단계(재검토 반영) 마무리, 5단계(사람에게 넘기기) 준비.
 > - 계약 본문: `plan-context-v3.md` (쟁점은 본문에 `[X-n 임시 A]`와 `⟵ X-n 결정 시 바꿀 줄`로 표시)
 > - 입력: `plan-context-v1.md`, `review-plancontext-v1-provider.md`(A팀), `review-plancontext-v1-consumer.md`(B팀), `plan-context-v2.md`, `review-plancontext-v2-provider.md`(A팀 재검토), `review-plancontext-v2-consumer.md`(B팀 재검토)
@@ -78,7 +80,7 @@
 
 ## 후속 작업
 
-> D-058: 각 moeun Issue **본문(수용 기준·변경 범위·선행)**에 반영한다. 댓글로 덧붙이지 않는다. 새 Issue는 G-7(+G-5b, G-13 포함) 하나뿐이다.
+> D-058: 각 moeun Issue **본문(수용 기준·변경 범위·선행)**에 반영한다. 댓글로 덧붙이지 않는다. 새 Issue는 G-7(+G-5b, G-13 포함) 하나뿐이다 → **#78**. 2026-11-16 Issue 18개 본문 반영 완료(#10·11·12·17·18·19·21·23·27·28·29·30·32·35·41·43·49·54).
 > 번호 출처: 양쪽 재검토자가 moeun Issue를 조회한 결과. #74는 2026-11-16 `gh api`로 확인함: closed(not_planned), #17에 합쳐짐 → G-15b는 #17.
 
 | G-번호 | 내용 | 팀 | 대상 moeun Issue | 선행 변경 |
@@ -88,9 +90,9 @@
 | G-3 | 프롬프트 규칙 1·2·3·5·6·8·9 / 7(X-1) / 4 | B | #35 / #21 / #23 | D-10(조건 7→4)은 #21 기존 범위라 제외. #35 선행에 `prompts.py` 순서 #21→#22→#23→#35 |
 | G-4 | fixture 테스트, `make_request` 헬퍼, 수동 평가 3~5건 | B | #35 | `FakeCalc` 교체는 #23(선행) |
 | G-5a | 빌더 단위 테스트(display = fixture, 요구 키 불변식, 미달 BAD `goalReachMonth` 키 없음, 라벨-`isAchieved`) | A | #28 | — |
-| G-5b | `PlanContextView` 직렬화 = fixture(숫자 스케일 무시, `memberId` 없음, `isAchieved` 키) | A | 새 Issue(G-7) | — |
+| G-5b | `PlanContextView` 직렬화 = fixture(숫자 스케일 무시, `memberId` 없음, `isAchieved` 키) | A | #78 (G-7) | — |
 | G-6 | (G-1에 흡수) | B | #11 | — |
-| G-7 | `PlanContextProvider`·`PlanRunRef`·`PlanContextView`·`ConditionsView`, 소유권 2단계, #29 Q1 재사용 | A | **새 Issue** `[calc] PlanContextProvider(C-1a)` | 선행 #19·#28·#29·#32 |
+| G-7 | `PlanContextProvider`·`PlanRunRef`·`PlanContextView`·`ConditionsView`, 소유권 2단계, #29 Q1 재사용 | A | **#78** `[calc] PlanContextProvider(C-1a)` | 선행 #19·#28·#29·#32 |
 | G-8a | `ResultDisplayBuilder`(공유, 접두어 2개, 추가 키 4개, `goalReachMonth` 방출 규칙) | A | #28 (불가 시 #29) | #28 paths에 빌더·테스트. #29로 가면 #29 선행에 #28. #30·#32 본문 "공유 빌더 사용" |
 | G-8b | Formatter: 음수 금액(지금), X-3·X-2(A면 `N.N%` 끝 0 제거)(결정 뒤) | A | #28 | — |
 | G-9a | chat 리스너: 트랜잭션 없이 HTTP(방법 (a)/(b)), 생성 실패 → 미호출 `FAILED`·`FAILURE`, `baselineScenario` 전달 | B | #41 | paths에 `backend/.claude/rules/modulith.md`(예외 1줄) |
@@ -98,7 +100,7 @@
 | G-10 | `CalcResultView`·`ScenarioResultView`를 calc 루트로, paths 설명 정정 | A | #32 | — |
 | G-11 | internal-calc.md 문구 정정(루트 타입, `/internal/calc` 한정 문장, 빌더 위치, 금액 경계, 문구표 키) | 기획 | 문서 + #10 본문 | X-3 결정 뒤 경계 표 |
 | G-12 | plan `findVersion(memberId, planVersionId)` + 현재 계획 조회에 기준 시나리오(문자열) | A | #19 | — |
-| G-13 | `persistence.md` calc_run 소유권 예외 1줄 | A | 새 Issue(G-7) | 새 Issue paths에 이 파일 |
+| G-13 | `persistence.md` calc_run 소유권 예외 1줄 | A | #78 (G-7) | 새 Issue paths에 이 파일 |
 | G-14 | 문구표 키 이름 `chat.noPlan`·`chat.alreadyExceeded`·`excluded.<CODE>` 5개·`scenarioMethod.<CODE>` 2개(임시 문장 필수) | 공통 | #18 | — |
 | G-15a | F-3 404: 없는·남의·CHAT 기록 모두 `NOT_FOUND` | B | #43 | — |
 | G-15b | 전역 오류 처리 `NOT_FOUND` ProblemDetail | A | #17 (#74 합침) | — |

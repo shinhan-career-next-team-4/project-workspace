@@ -794,7 +794,7 @@
  },
  {
   "id": "T-020",
-  "title": "[calc] Formatter: 약 N만원, 달성/미달 라벨, n년 n개월, 적금 a : ETF b",
+  "title": "[calc] Formatter와 공유 ResultDisplayBuilder: 약 N만원, 달성/미달 라벨, n년 n개월, 적금 a : ETF b, display 맵",
   "team": "A",
   "area": [
    "backend"
@@ -812,7 +812,9 @@
   ],
   "paths": [
    "backend/src/main/java/com/moeun/backend/calc/application/Formatter.java",
-   "backend/src/test/java/com/moeun/backend/calc/FormatterTest.java"
+   "backend/src/main/java/com/moeun/backend/calc/application/ResultDisplayBuilder.java",
+   "backend/src/test/java/com/moeun/backend/calc/FormatterTest.java",
+   "backend/src/test/java/com/moeun/backend/calc/ResultDisplayBuilderTest.java"
   ],
   "summary": "CP-04 표시 형식을 Spring 한 곳에서 만든다. 금액은 천 단위 반올림 후 '약 N만원', 목표 대비는 부호와 달성/미달, 기간은 'n년 n개월', 비중은 정수 백분율이다. 판정에 쓰는 값은 T-001에서 정한 기준(TBD-16)을 따르고 판정과 표시가 어긋나는 경계 테스트를 둔다.",
   "acceptance": [
@@ -1113,7 +1115,10 @@
   "status": "ready",
   "depends_on": [
    "T-003",
-   "T-013"
+   "T-013",
+   "T-014",
+   "T-015",
+   "T-010"
   ],
   "requirements": [
    "FR-AI-01",
@@ -1442,7 +1447,8 @@
   "status": "ready",
   "depends_on": [
    "T-033",
-   "T-021"
+   "T-021",
+   "T-064"
   ],
   "requirements": [
    "FR-AI-01",
@@ -2611,5 +2617,58 @@
    "docs/open-questions.md Q-043"
   ],
   "issue": 71
+ },
+ {
+  "id": "T-064",
+  "title": "[calc] PlanContextProvider: planContext 생성(C-1a)",
+  "team": "A",
+  "area": [
+   "backend"
+  ],
+  "priority": "must",
+  "week": 2,
+  "status": "ready",
+  "depends_on": [
+   "T-011",
+   "T-020",
+   "T-021",
+   "T-024"
+  ],
+  "requirements": [
+   "FR-AI-02",
+   "FR-AI-06",
+   "NFR-INT-01",
+   "D-030",
+   "D-045",
+   "D-060",
+   "D-061"
+  ],
+  "paths": [
+   "backend/src/main/java/com/moeun/backend/calc/PlanContextProvider.java",
+   "backend/src/main/java/com/moeun/backend/calc/PlanRunRef.java",
+   "backend/src/main/java/com/moeun/backend/calc/PlanContextView.java",
+   "backend/src/main/java/com/moeun/backend/calc/ConditionsView.java",
+   "backend/src/main/java/com/moeun/backend/calc/application/PlanContextProviderImpl.java",
+   "backend/src/test/java/com/moeun/backend/calc/PlanContextProviderTest.java",
+   "backend/src/test/java/com/moeun/backend/calc/PlanContextSerializationTest.java",
+   "backend/.claude/rules/persistence.md"
+  ],
+  "summary": "calc 공개 API PlanContextProvider(findPlanRun, findForCalcRun, findForCurrentPlan)와 PlanContextView·ConditionsView·PlanRunRef를 만든다. 소유권은 2단계(calc_run 조회 후 plan 공개 API findVersion, JOIN 금지), QUESTION은 #29 결과 조회 서비스를 재사용, display는 #28 공유 ResultDisplayBuilder, 직렬화는 계약 fixture와 같다(G-5b). persistence.md에 calc_run 소유권 예외 1줄(G-13). planContext 계약 G-7·G-5b·G-13.",
+  "acceptance": [
+   "Given 내 PLAN 기록 calcRunId When findForCalcRun을 부르면 Then 그 기록 기준의 PlanContextView가 오고 baselineScenario는 인자 값이다",
+   "Given 없는·남의·CHAT 기록 calcRunId When findPlanRun·findForCalcRun을 부르면 Then 모두 empty다",
+   "Given 계획이 없는 회원 When findForCurrentPlan을 부르면 Then empty다",
+   "Given 계약 부록 A 입력 When 직렬화하면 Then fixture와 같고(숫자 스케일 무시) memberId 키가 없으며 isAchieved 키가 있다"
+  ],
+  "done_when": [
+   "./gradlew test 통과",
+   "./gradlew test --tests ModularityTests 통과",
+   "./gradlew checkstyleMain checkstyleTest 통과"
+  ],
+  "refs": [
+   "docs/design/contracts/plan-context.md C1a-10, C1a-13",
+   "docs/design/contracts/plan-context-proposal.md G-5b, G-7, G-13"
+  ],
+  "issue": 78
  }
 ]
