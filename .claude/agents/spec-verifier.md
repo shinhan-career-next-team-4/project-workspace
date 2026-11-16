@@ -21,6 +21,7 @@ docs/srs.md, docs/decisions.md, docs/open-questions.md
 
 ## 규칙
 - docs/srs.md는 절대 수정하지 않는다.
+- TBD-xx, CF-xx의 원문은 repo에 없다. 내용을 추측하지 말고, 그 항목 때문에 판단이 막히면 "원문 확인 필요"로 적는다. 이미 비고에 미결로 표시된 TBD를 그대로 다시 질문으로 만들지 않는다. 새 질문은 정의서에 아직 드러나지 않은 문제에 집중한다.
 - 발견한 문제는 docs/open-questions.md 끝에 추가한다. 이미 있는 질문과 겹치면 추가하지 않는다.
 - 질문은 팀이 "A냐 B냐"로 답할 수 있게 쓴다. 가능하면 선택지 2~3개와 각 선택의 영향을 함께 적는다.
 - 사소한 문구 지적보다 개발을 막는 문제를 먼저 쓴다.
@@ -28,7 +29,7 @@ docs/srs.md, docs/decisions.md, docs/open-questions.md
 ## 질문 형식 (open-questions.md에 추가)
 ```
 ### Q-번호: [한 줄 질문]
-- 관련: FR-xxx
+- 관련: FR-INP-04, TBD-14 (요구사항 ID와 관련 TBD/CF/D 번호)
 - 심각도: 개발 차단 / 개발 중 혼란 / 사소함
 - 왜 문제인가: (1~2문장)
 - 선택지: A) ... / B) ...

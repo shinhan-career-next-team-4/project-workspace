@@ -11,6 +11,7 @@
 project-workspace/
 ├─ README.md
 ├─ CLAUDE.md                     # Claude Code가 따르는 기획 루프와 규칙
+├─ .github/pull_request_template.md  # PR 본문 형식
 ├─ .claude/
 │  ├─ settings.json              # 팀 공용 설정 (git-guard 훅 등록)
 │  ├─ hooks/git-guard.sh         # 에이전트 git 명령 제한
@@ -47,23 +48,25 @@ claude
 > CLAUDE.md의 기획 루프대로 docs/srs.md를 검토해줘
 ```
 
-- 에이전트는 기획 루프의 각 단계가 끝날 때마다 **커밋하고 main에 바로 push**합니다.
+- 에이전트는 기획 루프의 각 단계가 끝날 때마다 **작업 브랜치에 커밋 → PR 작성 → main에 바로 반영**합니다.
 
 ### 클라우드 세션 (claude.ai/code)
 
 1. claude.ai/code에서 이 repo를 선택하고 세션을 시작합니다. 터미널에서는 `claude --cloud "CLAUDE.md의 기획 루프대로 docs/srs.md를 검토해줘"`로도 시작할 수 있습니다.
-2. 로컬과 똑같이 단계마다 **main에 바로 push**합니다.
+2. 로컬과 똑같이 단계마다 **PR을 작성하고 main에 바로 반영**합니다.
 
-> 이 repo의 기획 문서는 1인 사용 전제라 PR 없이 main에 바로 반영합니다. 변경 이력은 `git log`와 커밋 메시지(`docs(<단계>): <요약>`)로 확인합니다.
+> 이 repo의 기획 문서는 1인 사용 전제라 리뷰를 기다리지 않고 main에 바로 반영합니다. 대신 **모든 변경은 PR로 남깁니다.** PR은 승인용이 아니라 "무엇을 왜 바꿨는지"를 나중에 읽기 위한 기록입니다. 본문 형식은 `.github/pull_request_template.md`를 따릅니다.
+>
+> 지난 변경을 돌아볼 때는 GitHub의 **Pull requests → Closed** 목록을 보면 단계별로 정리돼 있습니다.
 
 ### git 규칙 요약
 
 | | workspace 루트 (기획 문서) | moeun/ 로컬 CLI | moeun/ 클라우드 |
 |---|---|---|---|
 | 파일 수정 | ✅ | ✅ | ✅ |
-| 커밋 | ✅ 자동 | ❌ 사람이 직접 | ✅ |
+| 커밋 + PR 작성 | ✅ 자동 | ❌ 사람이 직접 | ✅ |
 | 작업 브랜치 푸시 | ✅ | ❌ | ✅ |
-| main 직접 푸시 | ✅ 자동 | ❌ | ❌ PR로 |
+| main 반영 | ✅ 자동 (PR 작성 후 바로) | ❌ | ❌ PR 리뷰 후 |
 | 강제 푸시, reset --hard, rebase, merge | ❌ | ❌ | ❌ |
 
 `moeun/`(개발 코드)은 기존 규칙을 유지합니다. 훅은 작업 위치(cwd)나 명령에 `moeun` 경로가 있으면 moeun 규칙을 적용합니다.
