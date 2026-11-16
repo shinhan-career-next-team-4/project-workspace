@@ -84,7 +84,7 @@ claude
 
 ## Submodule 적용 계획
 
-> **상태: 미적용.** 개발 repo들이 만들어지면 아래 순서로 적용합니다.
+> **상태: 미적용.** 개발 코드는 **moeun repo 하나**(frontend / backend / ai-server 폴더, 기본 브랜치 `develop`)에 있습니다(D-047). 아래의 3개 repo 구조 대신 `moeun` 하나를 submodule로 연결하면 됩니다: `git submodule add https://github.com/shinhan-career-next-team-4/moeun.git moeun`
 
 ### 목표 구조
 
