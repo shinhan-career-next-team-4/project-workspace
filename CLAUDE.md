@@ -56,9 +56,9 @@ PR은 **나중에 사람이 읽고 이해하기 위한 변경 기록**이다. �
 5. main 반영이 거부되면(main이 먼저 바뀐 경우) `git pull --rebase origin main` 후 브랜치와 main에 다시 push한다. 충돌이 나면 멈추고 사람에게 보고한다.
 6. 기획 루프 4번(사람의 결정 대기)에서 멈출 때도, 그때까지의 작업은 위 과정을 거쳐 main에 반영한 뒤 멈춘다.
 
-### moeun/ (개발 코드) — 기존 규칙
-- **로컬 CLI**: 커밋, 푸시, 브랜치 생성을 하지 않는다. 파일만 수정하고 사람이 직접 커밋한다.
-- **클라우드 세션**: 작업 브랜치에 커밋하고 푸시한다. main에는 직접 푸시하지 않는다.
+### moeun (개발 코드) — moeun 자체 규칙을 따른다
+- 개발 코드는 별도 repo [moeun](https://github.com/shinhan-career-next-team-4/moeun)에 있고, 작업 규칙(Issue → 브랜치 → PR, 머지는 사람)은 moeun 루트 `CLAUDE.md`와 `.claude/`에 있다(D-047~049).
+- 이 repo에서는 moeun 코드를 고치지 않는다. 기획 변경이 개발 작업으로 이어지면 moeun에 Issue를 만든다.
 
 ### 공통
 - 강제 푸시, `reset --hard`, `git rebase`, `git merge`는 실행하지 않는다.
