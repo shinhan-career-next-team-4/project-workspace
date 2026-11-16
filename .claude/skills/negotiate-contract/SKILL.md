@@ -50,5 +50,24 @@ description: moeun의 계약 Issue(예: #10 /internal/calc, #11 planContext, #12
 - `docs/open-questions.md`에 쟁점을 Q-번호로 올린다(심각도는 계약을 막으면 개발 차단).
 
 ## 6. 사람 결정 후
-- 사람이 "X-1은 A" 식으로 답하면 `docs/decisions.md`에 D-번호로 기록하고 proposal을 최종본(`<이름>.md`)으로 확정한다.
-- moeun Issue에 최종 계약 링크와 결정 번호를 댓글로 남기고 `status:ready`로 바꾼다. 이후 계약 문서를 moeun에 옮기는 작업(README 계약 표, REST Docs)은 그 Issue의 work-issue 절차로 개발 에이전트가 한다.
+- 사람이 "X-1은 A" 식으로 답하면 `docs/decisions.md`에 D-번호로 기록하고 v-최신본에 결정을 반영해 최종본(`<이름>.md`)으로 확정한다. SRS 문장이 결정과 어긋나면 함께 고친다.
+
+## 7. 후속 작업을 moeun Issue **본문**에 반영 (댓글 아님)
+개발 에이전트는 Issue **본문의 수용 기준**을 테스트로 옮긴다. 그래서 계약 때문에 생긴 작업은 댓글이 아니라 본문에 넣는다.
+
+1. proposal의 "후속 작업" 표에서 행마다 담당 Issue를 정한다.
+   - **기존 Issue가 같은 변경 범위(paths)나 같은 성격의 작업을 갖고 있으면 그 Issue에 합친다.** 새 Issue는 어느 Issue의 범위에도 맞지 않을 때만 만든다(같은 폴더를 두 Issue가 나눠 가지면 동시 작업 때 충돌한다).
+2. 대상 Issue 본문을 내려받아(`gh api repos/{owner}/moeun/issues/<n> --jq '{number,title,body,labels:[.labels[].name]}'`) `task-planner`에게 다시 쓰게 한다:
+   - "무엇을 왜": 필요하면 보강, 근거에 계약 항목 ID와 D-번호
+   - "수용 기준": 계약으로 생긴 검증 가능한 기준을 `- [ ] Given … When … Then …`으로 추가, 어긋나는 기존 기준은 고침
+   - "변경 범위": 필요한 경로 추가
+   - "선행": 계약 때문에 새로 생긴 선행이 있으면 추가(예: 문구표를 읽게 되면 문구표 Issue)
+   - "참고": 계약 최종본 링크와 절 ID, 합쳤다면 "#n을 합침"
+   - 본문 끝 "백로그 ID" 위에 `계약 반영: <이름> 최종본(D-xxx), <날짜>` 한 줄
+   - 결과는 `[{number, title(바꿀 때만), body}]` JSON 파일로 받는다.
+3. JSON을 검증한다(섹션 6개가 모두 있는지, 길이가 줄지 않았는지). 그 뒤 `gh api -X PATCH`로 본문(필요하면 제목)을 바꾼다. 이전 본문은 GitHub 수정 이력에 남는다.
+4. 계약 Issue(협상 대상)에는 최종본 링크와 결정 번호를 **짧은 댓글 1개**로 남기고 `status:ready`로 바꾼다. 다른 Issue에는 댓글을 달지 않는다.
+5. 합쳐서 필요 없어진 Issue가 있으면 "#n에 합쳤어요" 댓글을 달고 닫는다(`state_reason=not_planned`).
+6. project-workspace의 proposal 후속 작업 표에 반영한 Issue 번호를 적고, 선행이 바뀌었으면 `docs/backlog.json`의 `depends_on`도 고친다. 브랜치 → PR → main(CLAUDE.md git 규칙).
+
+이후 계약 문서를 moeun에 옮기는 작업(README 계약 표, REST Docs)은 계약 Issue의 work-issue 절차로 개발 에이전트가 한다.

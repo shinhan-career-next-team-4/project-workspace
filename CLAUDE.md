@@ -37,7 +37,7 @@
 8. **task-planner**: 백로그를 만든다.
 
 ## 계약 협상
-팀 사이 계약(예: moeun #10 `/internal/calc`, #11 planContext, #12 프론트-Spring API)은 `/negotiate-contract <moeun Issue 번호>`로 처리한다(D-054). 기획(tech-architect) 초안 → 개발 제공자(contract-provider)·소비자(contract-consumer) 독립 검토 → 기획 수정 → 재검토 최대 1회 → `docs/design/contracts/<이름>-proposal.md`에 합의안과 쟁점. 쟁점은 Q-번호로 올리고 사람이 정한다.
+팀 사이 계약(예: moeun #10 `/internal/calc`, #11 planContext, #12 프론트-Spring API)은 `/negotiate-contract <moeun Issue 번호>`로 처리한다(D-054). 기획(tech-architect) 초안 → 개발 제공자(contract-provider)·소비자(contract-consumer) 독립 검토 → 기획 수정 → 재검토 최대 1회 → `docs/design/contracts/<이름>-proposal.md`에 합의안과 쟁점. 쟁점은 Q-번호로 올리고 사람이 정한다. 결정 뒤 후속 작업은 moeun Issue **본문**(수용 기준·변경 범위·선행)에 직접 반영하고, 같은 범위의 기존 Issue가 있으면 새 Issue를 만들지 않고 합친다(D-058).
 
 ## 규칙
 - 모든 출력은 한국어로 한다.
@@ -61,7 +61,7 @@ PR은 **나중에 사람이 읽고 이해하기 위한 변경 기록**이다. �
 
 ### moeun (개발 코드) — moeun 자체 규칙을 따른다
 - 개발 코드는 별도 repo [moeun](https://github.com/shinhan-career-next-team-4/moeun)에 있고, 작업 규칙(Issue → 브랜치 → PR, 머지는 사람)은 moeun 루트 `CLAUDE.md`와 `.claude/`에 있다(D-047~049).
-- 이 repo에서는 moeun 코드를 고치지 않는다. 기획 변경이 개발 작업으로 이어지면 moeun에 Issue를 만든다.
+- 이 repo에서는 moeun 코드를 고치지 않는다. 기획 변경이 개발 작업으로 이어지면 **관련 moeun Issue의 본문(수용 기준·변경 범위·선행)을 고친다.** 맞는 Issue가 없을 때만 새 Issue를 만든다. 댓글로 요구사항을 덧붙이지 않는다(에이전트는 본문 수용 기준을 테스트로 옮긴다, D-058).
 
 ### 공통
 - 강제 푸시, `reset --hard`, `git rebase`, `git merge`는 실행하지 않는다.
