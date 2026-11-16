@@ -53,4 +53,4 @@
 | D-047 | 2026-11-16 | 개발 방식: 코드는 **moeun repo 하나**(frontend / backend / ai-server 폴더, 기본 브랜치 develop)에 둔다. 작업은 **GitHub Issues**(라벨로 상태 관리)로 관리하고, **Issue → 브랜치 → 개발 → PR**을 기본 규칙으로 한다(AI에게 따로 시키지 않아도 따르도록 moeun 규칙에 둔다). **머지는 사람이 한다** (자동 머지 없음) | 진혁 답변. moeun의 기존 규칙(main은 develop에서만 PR)과 함께 쓴다 | 확정 |
 | D-048 | 2026-11-16 | 백로그는 **A팀·B팀 전체 작업을 moeun repo의 GitHub Issues로** 만든다. project-workspace에는 Issue를 만들지 않는다. 팀·영역·상태·우선순위는 라벨로 구분한다 | 진혁 답변 | 확정 |
 | D-049 | 2026-11-16 | Issue → 브랜치 → PR 규칙과 개발 에이전트·지휘 명령은 **moeun 루트에 팀 공용으로** 둔다. develop으로 PR을 올리고 사람이 머지한다 | 진혁 답변. 팀 전체가 같은 규칙을 따라야 의미가 있음 | 확정 |
-
+| D-050 | 2026-11-16 | **herdr는 진혁만 쓰는 개인 도구**다. 여러 Issue를 병렬로 돌리는 지휘 스킬(`/run-backlog`)은 moeun 팀 설정이 아니라 진혁의 개인 설정(`~/.claude/skills/run-backlog/`)에 둔다. moeun에는 도구와 무관한 공용 규칙(Issue → 브랜치 → PR, work-issue 절차, 에이전트, 훅, 템플릿)만 둔다 | 진혁 답변. D-049(팀 공용 규칙)의 범위를 좁힘 | 확정 |
