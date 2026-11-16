@@ -36,6 +36,9 @@
 7. **tech-architect**: 실현 가능성을 검토하고, 요청받으면 API, DB 초안을 작성한다.
 8. **task-planner**: 백로그를 만든다.
 
+## 계약 협상
+팀 사이 계약(예: moeun #10 `/internal/calc`, #11 planContext, #12 프론트-Spring API)은 `/negotiate-contract <moeun Issue 번호>`로 처리한다(D-054). 기획(tech-architect) 초안 → 개발 제공자(contract-provider)·소비자(contract-consumer) 독립 검토 → 기획 수정 → 재검토 최대 1회 → `docs/design/contracts/<이름>-proposal.md`에 합의안과 쟁점. 쟁점은 Q-번호로 올리고 사람이 정한다.
+
 ## 규칙
 - 모든 출력은 한국어로 한다.
 - decisions.md와 충돌하는 내용은 쓰지 않는다. 결정을 바꿔야 할 것 같으면 질문으로 올린다.
