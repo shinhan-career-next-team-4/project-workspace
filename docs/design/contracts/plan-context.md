@@ -333,7 +333,7 @@ public record PlanContextView(long calcRunId, ConditionsView conditions, CalcRes
 | `QUESTION` | 현재 계획 버전의 최신 PLAN 기록. **[v3] #29의 "현재 계획의 결과를 조회하는 공개 서비스"(결과 화면 Q1(a)~(c), `db/erd.md` §4 Q1)를 그대로 호출**해 얻는다(없거나 활성 버전과 다르면 계산·기록). planContext용으로 따로 구현하지 않는다 | `null`. **`planContext.calcRunId`는 있는 것이 정상** |
 
 - **[v3] QUESTION 매 턴 INSERT 방지**(소비자 요청): Q1 서비스는 "활성 버전과 같은 최신 PLAN 기록이 있으면 재기록하지 않는다". 그래서 대화 질문마다 `calc_run`이 쌓이지 않는다. 이 문장을 #29 본문에서 확인한다(G-18).
-- QUESTION에서 `PlanChanged` 리스너와 동시에 PLAN 행이 2개 생길 수 있으나 `ix_calc_run_latest`가 최신 1행을 고르므로 무해하다(C2-7과 같은 방침).
+- QUESTION에서 `PlanChanged` 리스너와 동시에 PLAN 행이 2개 생길 수 있으나 `ix_calc_run_latest`가 최신 1행을 고르므로 무해하다(C2-7과 같은 방침). **[정정 2026-11-16, #12-a Y-17]** 이 문장은 `frontend-api-plan.md` C12a-6-6으로 대체: 기준 데이터 활성 버전·`engine_version`이 그대로인 동안 같은 (버전, PLAN) 기록은 #29 advisory 잠금으로 하나만 생긴다(같은 revision = 같은 `calcRunId`).
 - **데이터 버전(R-4)**: planContext는 그 PLAN 기록의 버전, 같은 턴의 `/internal/calc` `current`는 활성 버전. QUESTION은 Q1-c 때문에 같고, 차이는 오래된 EXPLAIN 기록에서만 생기며 해커톤 중 재적재가 없으면 생기지 않는다(D-045). #10은 다시 열지 않고 프롬프트 규칙 4로 막는다.
 
 ## C1a-11. 특수한 경우 [합의, F-3 호출 여부는 X-4]

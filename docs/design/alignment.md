@@ -1,5 +1,8 @@
 # SRS·결정과 moeun 설계의 차이 (기획 루프 7번, tech-architect)
 
+> **정정 (2026-11-16)**: 이 문서의 계약 초안은 확정 최종본으로 대체됐다 — `docs/design/contracts/internal-calc.md`(#10), `plan-context.md`(#11), `frontend-api-chat.md`(#12-b), `frontend-api-plan.md`(#12-a). 특히 옛 A-1(`POST /api/plan/apply {source:"CHAT"}`)·A-2 모양은 F-5 `POST /api/chat/messages/{id}/apply`·P-5 `POST /api/plan/undo`(`{revision}`, D-068)로 바뀌었다. 차이가 있으면 최종본을 따른다.
+
+
 > 작성: tech-architect, 2026-11-16. **새로 설계하지 않고**, 기획 문서와 moeun에 이미 있는 설계를 맞춰 본 결과다.
 > - 기획 기준: `docs/srs.md`(D-045 반영본), `docs/decisions.md`(D-001~047), `docs/scope-review.md`, `docs/notion-decisions.md`
 > - moeun 기준(읽기만 함): `db/decision.md`(ADR-001·002), `db/tables.md`, `db/erd.md`, `db/moved-to-code.md`, `backend/CLAUDE.md`, `backend/src/main/java/com/moeun/backend/calc/*`, `backend/src/main/resources/db/schema.sql`, `ai-server/CLAUDE.md`, `ai-server/README.md`, `ai-server/app/schemas.py`, `ai-server/app/llm/agent.py`, `ai-server/app/llm/prompts.py`, `ai-server/app/tools/calc.py`, `ai-server/.claude/rules/langchain.md`

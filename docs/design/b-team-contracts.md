@@ -1,5 +1,8 @@
 # B팀 인터페이스 계약 (조건 탐색: AI 대화·설명·RAG)
 
+> **정정 (2026-11-16)**: 이 문서의 계약 초안은 확정 최종본으로 대체됐다 — `docs/design/contracts/internal-calc.md`(#10), `plan-context.md`(#11), `frontend-api-chat.md`(#12-b), `frontend-api-plan.md`(#12-a). 특히 옛 A-1(`POST /api/plan/apply {source:"CHAT"}`)·A-2 모양은 F-5 `POST /api/chat/messages/{id}/apply`·P-5 `POST /api/plan/undo`(`{revision}`, D-068)로 바뀌었다. 차이가 있으면 최종본을 따른다.
+
+
 > 작성: tech-architect, 2026-11-16. 기준: D-046(B팀 = 대안·비교·AI 대화·설명·RAG, 계산은 A팀 엔진 호출, 적용은 A팀 흐름), D-045(범위), moeun에 이미 있는 계약.
 > - **있음(경로)**: moeun에 이미 정의된 것. 경로는 `moeun/` 기준.
 > - **필요(초안)**: 아직 없는 것. 아래 초안은 결정이 아니며 **합의 필요**다.

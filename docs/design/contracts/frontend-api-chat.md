@@ -324,7 +324,7 @@
 3. 결과 화면 전체 다시 불러오기(#30·#31).
 4. **[v3] F-3은 여기서 부르지 않는다.** 결과 화면의 `calcRunId`가 바뀌면 #54가 한 곳에서 부른다(C12b-3a "호출 지점").
 
-- 결과 재조회와 `PlanChanged` 리스너가 같은 (버전, PLAN) 기록을 동시에 만들어 2행이 되는 경우는 **무해**하다(plan-context C1a-10 합의와 같음. 조회는 `ix_calc_run_latest`로 최신 1행). 유일 제약·멱등 INSERT는 **두지 않는다**. #29의 "같은 이벤트 두 번 → 중복 없음"(이벤트 단위 멱등)과는 다른 이야기라 둘 다 유지해도 모순이 없다.
+- 결과 재조회와 `PlanChanged` 리스너가 같은 (버전, PLAN) 기록을 동시에 만들어 2행이 되는 경우는 **무해**하다(plan-context C1a-10 합의와 같음. 조회는 `ix_calc_run_latest`로 최신 1행). 유일 제약·멱등 INSERT는 **두지 않는다**. #29의 "같은 이벤트 두 번 → 중복 없음"(이벤트 단위 멱등)과는 다른 이야기라 둘 다 유지해도 모순이 없다. **[정정 2026-11-16, #12-a Y-17]** 이 문장은 `frontend-api-plan.md` C12a-6-6으로 대체: 기준 데이터 활성 버전·`engine_version`이 그대로인 동안 같은 (버전, PLAN) 기록은 #29 advisory 잠금으로 하나만 생긴다(같은 revision = 같은 `calcRunId`).
 
 ### C12b-7-4. 계획이 바뀐 뒤 이전 비교 버튼 비활성 (D-041) — [D-068, D-069]
 
@@ -410,7 +410,7 @@ Content-Type: application/problem+json
   "instance": "/api/chat/messages/1031/apply",
   "code": "VALIDATION_FAILED",
   "errors": [
-    { "field": "monthlySavingAmount", "reason": "OUT_OF_RANGE", "min": 10000, "max": 5000000, "unit": "KRW" }
+    { "field": "monthlySavingAmount", "reason": "OUT_OF_RANGE", "min": 10000, "max": 10000000, "unit": "KRW" }
   ]
 }
 ```

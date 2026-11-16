@@ -875,7 +875,7 @@
  },
  {
   "id": "T-022",
-  "title": "[plan] 결과 보기 API: 검증 -> 저장 -> 계산 -> 결과 응답",
+  "title": "[calc] 결과 보기 API: 검증 -> 저장 -> 계산 -> 결과 응답",
   "team": "A",
   "area": [
    "backend"
@@ -926,7 +926,7 @@
  },
  {
   "id": "T-023",
-  "title": "[plan] 현재 계획 조회 API: 로그인 후 진입 분기와 입력값 유지",
+  "title": "[calc] 현재 계획 조회 API: 로그인 후 진입 분기와 입력값 유지",
   "team": "A",
   "area": [
    "backend"
@@ -935,7 +935,10 @@
   "week": 2,
   "status": "ready",
   "depends_on": [
-   "T-022"
+   "T-022",
+   "T-011",
+   "T-020",
+   "T-021"
   ],
   "requirements": [
    "FR-PLAN-06",
@@ -1018,7 +1021,7 @@
  },
  {
   "id": "T-025",
-  "title": "[plan] 적용·되돌리기 서비스와 REST(대안/비교 출처)",
+  "title": "[plan] 적용·되돌리기 서비스와 되돌리기 REST(POST /api/plan/undo)",
   "team": "A",
   "area": [
    "backend"
@@ -1029,7 +1032,8 @@
   "depends_on": [
    "T-004",
    "T-011",
-   "T-021"
+   "T-021",
+   "T-012"
   ],
   "requirements": [
    "FR-PLAN-03",
@@ -1706,7 +1710,8 @@
   "status": "ready",
   "depends_on": [
    "T-040",
-   "T-004"
+   "T-004",
+   "T-005"
   ],
   "requirements": [
    "FR-RES-01",
@@ -1750,7 +1755,8 @@
   "week": 2,
   "status": "ready",
   "depends_on": [
-   "T-041"
+   "T-041",
+   "T-005"
   ],
   "requirements": [
    "FR-RES-03",
@@ -1789,7 +1795,8 @@
   "status": "ready",
   "depends_on": [
    "T-041",
-   "T-004"
+   "T-004",
+   "T-005"
   ],
   "requirements": [
    "FR-PLAN-04",
@@ -1871,7 +1878,8 @@
   "status": "ready",
   "depends_on": [
    "T-044",
-   "T-043"
+   "T-043",
+   "T-005"
   ],
   "requirements": [
    "FR-AI-06",
@@ -1914,7 +1922,8 @@
   "status": "ready",
   "depends_on": [
    "T-044",
-   "T-041"
+   "T-041",
+   "T-005"
   ],
   "requirements": [
    "FR-AI-01",
