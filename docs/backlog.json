@@ -803,7 +803,8 @@
   "week": 2,
   "status": "ready",
   "depends_on": [
-   "T-001"
+   "T-001",
+   "T-010"
   ],
   "requirements": [
    "CP-04",

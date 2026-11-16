@@ -99,7 +99,7 @@
 
 ## 이 계약 때문에 생긴 후속 작업
 
-> 2026-11-16 처리: 새 Issue #74(F-5 전역 오류 처리), #75(F-4 /internal 보안 필터), #76(F-12 ADR-002 문장). 기존 Issue 14개(F-1·2·3·6~11·13~17)에 추가 사항 댓글, #23·#10은 paths 추가. #10은 status:ready.
+> 2026-11-16 처리: 후속 작업을 **각 moeun Issue 본문(수용 기준·변경 범위)에 직접 반영**했다(16개). 새로 만들었던 #74·#75·#76은 같은 변경 범위의 #17·#16·#20에 합치고 닫았다. #28 선행에 #18(문구표) 추가.
 
 이미 백로그(`docs/backlog.json`)에 있는 Issue는 범위·수용 기준에 아래 내용을 더하면 되고, 없는 것은 새 moeun Issue가 필요하다.
 
@@ -108,15 +108,15 @@
 | F-1 | `CalcClient` 오류 처리: `CalcRejected(code, errors)`, 400·401·5xx·타임아웃 → `AgentError`, 200 응답 추리기, `display` 전환기 검사 | B | **#23**(T-015) | 코드 분기(고정 문장)와 재계산 가드는 `agent.py`(`_TOOL_ERRORS`, `_recalculate`)를 고쳐야 하는데 #23 `paths`에 `agent.py`가 없다. #23 `paths`에 `ai-server/app/llm/agent.py`를 더하고, 같은 파일을 고치는 #21·#22와 **순서대로**(#21 → #22 → #23) 처리 |
 | F-2 | 도구 스키마 4개 축소, `ConditionChanges`의 범위 검사 제거(D-033), 목표 금액 의도 → 전용 문구 | B | **#21**(T-013, M-2) | X-2 결과(`messageType`)를 수용 기준에 반영 |
 | F-3 | Spring `POST /internal/calc`: `memberId`·`conditionChanges` `JsonNode` 검사, 검사 순서, `CalcComparison`, `CalcResultView` DTO(`@JsonProperty("isAchieved")`), `diff`(`afterTaxGainDelta`, 포인터), display 키(맵 빌더 약 0.5일), 비중 고정, **`minDisplay`·`maxDisplay` 붙이기**(`plan.ConditionViolationException` → `Formatter` → `calc.CalcRejectedException`), 부록 A와 일치하는 REST Docs 테스트 | A | **#32**(T-024) | 수용 기준에 "FIELD_NOT_CHANGEABLE는 허용 키가 섞여도 전체 거절", "두 번째 요청에 첫 변경이 섞이지 않음", "`diff.baselineScenario`는 항상 `byScenario`에 있음", "`memberId: 7.5` → 400", "`OUT_OF_RANGE` 오류에 `minDisplay`·`maxDisplay` 있음" 추가. #28에 의존 |
-| F-4 → moeun #75 | `/internal/**` 전용 `SecurityFilterChain` + API 키 필터(401 ProblemDetail 직접 작성) | A | **새 Issue 권장** | `config/security/**`는 #16(T-008)의 `paths`라 #32에서 고치면 `paths` 위반. #16 이후·#32 이전, 2주차 초 |
-| F-5 → moeun #74 | `config` 전역 `@RestControllerAdvice`(ProblemDetail + `code`·`errors`, Spring 기본 예외 → 400 `MALFORMED_REQUEST`) | A | **새 Issue 필수** | #17·#30·#32·#33이 모두 이 형식을 쓰지만 어느 Issue `paths`에도 `config/error/**`가 없다. **1주차에 #17과 같이 진행**(제공자 재검토 "꼭 지킬 것") |
+| F-4 → moeun #16 (#75 합침) | `/internal/**` 전용 `SecurityFilterChain` + API 키 필터(401 ProblemDetail 직접 작성) | A | **새 Issue 권장** | `config/security/**`는 #16(T-008)의 `paths`라 #32에서 고치면 `paths` 위반. #16 이후·#32 이전, 2주차 초 |
+| F-5 → moeun #17 (#74 합침) | `config` 전역 `@RestControllerAdvice`(ProblemDetail + `code`·`errors`, Spring 기본 예외 → 400 `MALFORMED_REQUEST`) | A | **새 Issue 필수** | #17·#30·#32·#33이 모두 이 형식을 쓰지만 어느 Issue `paths`에도 `config/error/**`가 없다. **1주차에 #17과 같이 진행**(제공자 재검토 "꼭 지킬 것") |
 | F-6 | `ConditionValidator`·`rules.yml`: 위치 확정(`backend/src/main/resources/config/rules.yml`), `InputField` ↔ camelCase 매핑, 걸린 필드 모두 반환. 오류에는 `min`·`max`·`unit`·`scale`만 담음(**display 문자열은 만들지 않음**, plan은 calc에 의존하지 않음) | A | **#17**(T-009) | `paths`가 이미 이 위치와 같음. `minDisplay`·`maxDisplay`는 #32로 옮겨 감(F-3) |
 | F-7 | Formatter: X-1 결과 형식, 경계 규칙, `YYYY년 M월`, `연 N.NN%`, 경계값 표시(`약` 없음), 비중 `적금 a : ETF b` | A | **#28**(T-020) | **X-1 결정 뒤 시작.** 수용 기준 보강: 방향 단어(`증가`/`감소`), 경계값 4가지(`변화 없음`, `1만원 미만 …`, `0원 달성`, 1억 이상 `약 12,345만원`), `YYYY년 M월`, `연 N.NN%`, `약` 없는 경계값 표시, 비중 형식 하나. TBD-16 판정 기준은 #9(T-001) |
 | F-8 | 엔진의 시나리오 순서 GOOD·AVG·BAD 보장 테스트 | A | **#27**(T-019) | 수용 기준 1줄 추가 |
 | F-9 | `CalcInput.calcStartMonth` 주석 정정(M-1), 비중 고정 방어 규칙의 단위 테스트 | A | **#25**(T-017) | |
 | F-10 | 문구표 키: 대화로 못 바꾸는 조건 안내, `NO_PLAN`·`ALREADY_EXCEEDED` 대화 안내, 증가/감소/변화 없음, 비중 `적금 a : ETF b`, 오류 `title` | 공통 | **#18**(T-010) | X-2 결과 반영 |
 | F-11 | 범위 밖 문구 이전 시 "대화로 못 바꾸는 조건"을 범위 밖과 분리 | B | **#38**(T-030) | X-2 결과 반영 |
-| F-12 → moeun #76 | ADR-002 §2-2 문장 수정, `db/moved-to-code.md`의 `config/rules.yml`(두 서버 공용) 문장을 Spring 전용 위치로 수정 | 공통 | **새 Issue(docs)** | X-3이 A일 때. 문서만 |
+| F-12 → moeun #20 (#76 합침) | ADR-002 §2-2 문장 수정, `db/moved-to-code.md`의 `config/rules.yml`(두 서버 공용) 문장을 Spring 전용 위치로 수정 | 공통 | **새 Issue(docs)** | X-3이 A일 때. 문서만 |
 | F-13 | 계약 최종본을 moeun `docs/api/internal-calc.md`와 `ai-server/README.md` "Spring과의 계약"에 옮김, fixture JSON 위치 정하기 | 공통 | **#10** 자신 | fixture를 한 파일로 공유하려면 #10 `paths`에 `docs/api/examples/**` 추가 권장(지금은 md 2개뿐). 아니면 #23(`ai-server/tests/fakes/**`)과 #32(`backend/src/test/**`)가 각각 복사하고 "계약 변경 시 두 복사본 동시 수정" 규칙을 README에 적음 |
 | F-14 | 프론트 API 401(JWT 만료) 본문을 같은 ProblemDetail 형식으로 | 공통 | **#12**(T-004) | 계약 메모만 |
 | F-15 | `planContext.display`도 C2-6 키·형식 규칙을 재사용, snake/camel 통일 | 공통 | **#11**(T-003) | X-1 결과를 같이 따름 |
