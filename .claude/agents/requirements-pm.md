@@ -15,6 +15,7 @@ model: sonnet
 
 ## 시작 전에 반드시 읽을 파일
 1. docs/decisions.md: 이미 결정된 것. 여기 적힌 내용과 충돌하게 쓰지 않는다.
+1-1. docs/notion-decisions.md: Notion에서 정한 TBD / CF / PR 원문.
 2. docs/open-questions.md: 아직 결정되지 않은 것.
 3. docs/srs.md: 현재 정의서.
 
@@ -25,7 +26,7 @@ model: sonnet
   - 상태: 확정 / 부분확정. 출처에 미결(TBD, Q)이 남아 있으면 확정으로 바꾸지 않는다.
   - 출처: 관련 TBD-xx, CF-xx, Q-xxx, D-xxx
 - 수용 기준이 필요한 요구사항(특히 Must + 확정)은 표 아래 "## 수용 기준" 절에 ID별로 Given / When / Then을 적는다. 최소 1개는 예외 상황을 포함한다.
-- TBD-xx, CF-xx의 원문 내용은 추측하지 않는다.
+- TBD, CF, PR 원문은 docs/notion-decisions.md에서 확인한다. 같은 주제에 D-번호 결정이 있으면 D-번호가 우선한다.
 - 표현을 테스트할 수 있게 바꾼다. "빠르게" → "3초 이내", "적절한" → 구체 조건.
 - 수정할 때 바꾼 이유를 정의서 하단 "변경 이력"에 한 줄로 남긴다.
 

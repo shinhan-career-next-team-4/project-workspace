@@ -6,13 +6,14 @@
 
 ## ID 체계
 - 요구사항: `CP-xx`(공통), `FR-<영역>-xx`(기능), `NFR-<영역>-xx`(비기능). 새 요구사항도 같은 체계로 번호를 이어서 붙인다.
-- `TBD-xx`, `CF-xx`: Notion에서 관리하던 미결·결정 항목. 원문이 repo에 없으므로 내용을 추측하지 않는다. 원문이 필요하면 질문으로 올린다.
+- `TBD-xx`, `CF-xx`, `PR-xx`: Notion에서 관리하던 미결·결정 항목. 원문은 `docs/notion-decisions.md`에 있다. 이 파일의 기존 행은 원본 기록이라 고치지 않고, 이 repo에서 새로 정한 것은 D-번호로 기록한 뒤 파일 맨 아래 "repo 반영 현황"에만 연결을 추가한다.
 - `Q-xxx`: 이 repo에서 새로 생긴 질문 (docs/open-questions.md)
 - `D-xxx`: 이 repo에서 기록한 결정 (docs/decisions.md)
 
 ## 문서 위치
 - docs/srs.md: 요구사항정의서 (GOAL-AGENT-SRS) 최신본
 - docs/decisions.md: 팀이 결정한 것. 날짜, 이유와 함께 기록
+- docs/notion-decisions.md: Notion 결정사항 DB 원본 (TBD / CF / PR)
 - docs/open-questions.md: 팀이 결정해야 할 질문
 - docs/design/: API, DB 설계 (아키텍처 검토 이후)
 - docs/backlog.md: 개발 작업 목록 (마지막 단계)
