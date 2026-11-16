@@ -619,3 +619,30 @@ spec-verifier, finance-domain-reviewer, tech-architect가 질문을 추가한다
   - C) **줄이지 않음**: 현재 Must 60건 유지. → 일정 위험이 가장 큼
 - 추가로 정할 것: A나 B를 고르면 D-005(목표일 선택 입력)·D-015(월 저축액 모름 처리)와 화면이 어긋나므로, "해커톤 데모에서는 기간·월 저축액 필수"를 임시 결정으로 기록할지
 - 상태: 결정됨 → D-045
+
+---
+
+## 설계 맞춰보기 (2026-11-16, tech-architect)
+
+> 상세 근거는 `docs/design/alignment.md` §3, B팀 계약은 `docs/design/b-team-contracts.md`.
+
+### Q-041: 대화 기록을 얼마나 보관하나? (D-030 "세션 동안만" vs moeun `chat_message` 영구 저장)
+- 관련: D-030, NFR-INT-03, FR-AI-01·06·07, moeun ADR-001, `chat_message`
+- 심각도: 개발 차단 (B팀 Spring chat 모듈의 저장·삭제 동작)
+- 왜 문제인가: D-030은 대화 기록을 세션 동안만 보관하기로 했는데, moeun은 대화를 DB에 계속 저장하도록 설계됐다(ADR-001). 게다가 무상태 JWT라 서버는 "세션이 끝났다"는 시점을 알 수 없다.
+- 선택지: A) 로그인·로그아웃 때 이전 대화를 삭제(D-030 유지, 스키마 변경 없음) — 권장 / B) D-030을 바꿔 계속 보관하고 데모 후 일괄 삭제
+- 상태: 미결
+
+### Q-042: 세션 관리 요구사항(NFR-SEC-02, D-031)을 moeun의 JWT 방식에 맞춰 고쳐 적나?
+- 관련: NFR-SEC-02, FR-AUTH-02·03, D-031, moeun ADR-002
+- 심각도: 개발 중 혼란
+- 왜 문제인가: SRS는 "서버에서 세션 관리", D-031은 "서버 요청만 조작으로 봄"인데 moeun은 JWT(HttpOnly 쿠키)로 정했고 폴링은 만료 연장에서 뺀다. 로그아웃도 쿠키를 서버가 지워야 해서 로그아웃 엔드포인트가 필요하다.
+- 선택지: A) SRS를 moeun에 맞춰 고침(JWT, 폴링 제외, 서버 로그아웃 엔드포인트) — 권장 / B) moeun을 서버 세션으로 바꿈
+- 상태: 미결
+
+### Q-043: 3주 안에 ai-server를 LangGraph로 전환하나?
+- 관련: NFR-INT-03, moeun ai-server/CLAUDE.md
+- 심각도: 개발 중 혼란
+- 왜 문제인가: ai-server/CLAUDE.md는 LangGraph 전환을 계획하지만 지금은 SDK 에이전트 루프다. 전환은 B팀 일정에 큰 작업이다.
+- 선택지: A) SDK 루프로 Must를 먼저 끝내고 2주차 말에 전환 여부 판단 — 권장 / B) 1주차에 전환부터
+- 상태: 미결
