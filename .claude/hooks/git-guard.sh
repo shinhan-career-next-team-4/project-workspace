@@ -27,8 +27,11 @@ if has "${GIT}push[^\"]*(--force|[[:space:]]-f([[:space:]]|\"))" \
 fi
 
 # 작업 위치가 moeun/ 이 아니면 workspace 규칙: 그대로 허용
-# (cwd가 moeun 아래이거나, 명령에 moeun 경로가 들어 있으면 moeun 규칙 적용)
-if ! has '"cwd"[[:space:]]*:[[:space:]]*"[^"]*/moeun(/|")' && ! has 'moeun'; then
+# (cwd가 moeun 아래이거나, git -C가 moeun을 가리키면 moeun 규칙 적용)
+# 경로로만 판정한다. 예전처럼 'moeun' 문자열을 통째로 찾으면 상위 폴더 이름(moeun_pro)이나
+# 커밋 메시지 속 단어에도 걸려 기획 repo의 git 작업이 통째로 막힌다.
+if ! has '"cwd"[[:space:]]*:[[:space:]]*"[^"]*/moeun(/|")' \
+  && ! has '[-]C[[:space:]]+[^[:space:]"]*/moeun(/|[[:space:]]|")'; then
   exit 0
 fi
 

@@ -3,6 +3,11 @@
 > **최종본** (2026-11-16). v3에 쟁점 결정 D-074(목표명 100자), D-075(GoalType 7개), D-076(로컬 데모, 임시 — 원격 배포로 바뀔 수 있어 쿠키 `Secure`·서명 키·허용 출처는 설정값)을 반영했다. 본문의 "쟁점 X-n이 다르면 …" 문장은 기록용이다.
 > 협상 기록: `frontend-api-plan-v1.md` → 검토 2건 → `-v2.md` → 재검토 2건 → `-v3.md`, 합의안 `frontend-api-plan-proposal.md`. 이 문서와 `frontend-api-chat.md`(#12-b)를 moeun #12가 `docs/api/frontend-api.md`와 `frontend/src/mocks/`로 옮긴다.
 >
+> **v4 개정 (2026-11-20, #12-a 개정 — 본문에 직접 반영했다. [v4] 표시)**
+> - FR-INP-08을 되살린 **D-085**에 따라 `savingsRatioPct`를 `PUT /api/plan` **요청 필드**로 올렸다. 바뀐 절: C12a-5-1(요청 표·예시·"요청에 없는 것"), C12a-5-2(순서 2·4), C12a-5-5(범위 표), C12a-5-6((f)(g)(h)), C12a-7(가정 보기·입력 수정 채우기), C12a-7-1(문구 키 7개), C12a-12(목 31개), R-9.
+> - 새 결정: **D-086**(요청 필드와 `null`의 뜻 = 사용자가 정한 비중 없음 → `NULL` 저장 + 기본 비중 계산, R-9 복사 철회), **D-087**(비중 산출은 NFR-INT-01 예외·정수 HALF_UP 고정식), **D-088**(차액 안내는 금액 없는 고정 문장), **D-089**(입력 수정 복원 토글 상태). 모두 상태 **임시**.
+> - 협상 기록: `frontend-api-plan-v4-draft.md` → 검토 2건 → `frontend-api-plan-v4.md`(§Z 변경 표 Z-1~Z-18) → 재검토 2건 → 합의안 `frontend-api-plan-v4-proposal.md`. **쟁점 0건**(초안 쟁점 3개 모두 닫힘). 후속 작업은 moeun **#127** 본문.
+>
 > **최종본 보충 (2026-11-16, D-077~082 임시, 본문보다 우선)**
 > - **D-077** P-3 응답 유실(네트워크·502·비JSON): 입력값 유지 + `common.networkError` + `loadPlan()`으로 `revision`만 맞춤(C12a-6-5 "부르는 때" 표에 추가). → #48, #13
 > - **D-078** 로그인·로그아웃 성공 시 `BroadcastChannel("moeun-auth")`로 알림 → 받은 탭은 store 비우고 `loadPlan()`부터. → #13, #47, #58(시연 절차)
@@ -191,7 +196,8 @@ FR-INP-01~07·09·10·11, FR-RES-01, CP-02, D-013, D-032, D-035, D-045.
   "targetPeriodMonths": 36,
   "heldAssets": 5000000,
   "monthlySavingAmount": 300000,
-  "savingsRateInputPct": null
+  "savingsRateInputPct": null,
+  "savingsRatioPct": null
 }
 ```
 
@@ -205,13 +211,15 @@ FR-INP-01~07·09·10·11, FR-RES-01, CP-02, D-013, D-032, D-035, D-045.
 | `heldAssets` | integer(KRW) | 예 | FR-INP-05. 0 허용 |
 | `monthlySavingAmount` | integer(KRW) | 예(D-045) | FR-INP-06 |
 | `savingsRateInputPct` | number(PCT) \| null | 키 필수 | FR-INP-07. `null` = 기본금리(D-012·D-034) |
+| `savingsRatioPct` | integer(PCT) \| null | 키 필수 | **[v4]** FR-INP-08. 적금 비중(%), 0~100 정수. **`null` = 사용자가 정한 비중이 없음** → `plan_version.savings_ratio_pct`에 `NULL`을 저장하고 계산은 기준 데이터의 기본 비중(5:5)을 쓴다. **현재 버전 값을 복사하지 않는다**(R-9의 INPUT 경로 철회) [D-085, D-086] |
 
 - **`goalType` 임시 목록**(enum 선언 순서 = 드롭다운 순서, 표시명 문구표 `goal.<CODE>`) [D-075]:
   `HOUSE`(내 집 마련), `CAR`(자동차), `WEDDING`(결혼), `EDUCATION`(교육), `TRAVEL`(여행), `EMERGENCY_FUND`(비상금), `CUSTOM`(직접 입력). 괄호 안은 문구표 임시 문장.
   - **[v3]** `CUSTOM`은 FR-INP-02(Should)를 구현하지 않은 동안 #48이 드롭다운에서 숨긴다(코드는 둔다). 숨김 조건은 #48 수용 기준에 적는다.
   - **[v3]** 프론트는 문구표에 없는 `goal.<CODE>`를 만나면 **코드 문자열을 그대로 표시**한다(화면이 깨지지 않게). 왜: 서버가 코드를 먼저 더하고 문구가 늦을 수 있다. #18의 "없는 키는 로드 때 실패" 규칙과는 별개로, 표시 helper 한 곳(#48 util 옆)에서만 대체한다.
   - **[v3] 주의(제공자)**: 코드는 `plan_version.goal_type_code`에 저장된다. 데이터가 생긴 뒤 코드를 지우거나 이름을 바꾸면 옛 행을 enum으로 읽을 때 실패한다. 목록 변경은 #19 머지 전이 가장 싸고, 그 뒤면 #58 초기화와 함께 한다.
-- **요청에 없는 것**: `savingsRatioPct`(현재 버전 값 복사, 첫 저장이면 `NULL` = 5:5, R-9), `existingMonthlyContribution`(항상 `NULL`), 시작월(첫 저장이면 요청일이 속한 달 D-032, 아니면 현재 버전 값 복사 D-013), 기준 시나리오(첫 저장이면 `AVG`).
+- **[v4] 요청에 없는 것**: `existingMonthlyContribution`(항상 `NULL`, D-043 — **보내도 서버가 읽지 않고 그냥 무시한다. 400이 아니다**), 시작월(첫 저장이면 요청일이 속한 달 D-032, 아니면 현재 버전 값 복사 D-013), 기준 시나리오(첫 저장이면 `AVG`).
+- **[v4] 기본 비중 수치(50)는 기준 데이터 파라미터(`DEFAULT_SAVINGS_RATIO_PCT`) 한 곳에만 있다.** 계약·프론트·plan 코드에 복제하지 않는다(CP-02). `savings_ratio_pct`에 `50`이 들어 있는 것과 `NULL`인 것은 계산 엔진·planContext·대안/비교/대화 재계산·`display`·`assumptions`에서 **같게 취급된다**. 차이는 `PlanView`가 원본을 그대로 내보내는 것 하나뿐이고, 그 차이는 토글 복원(C12a-7)과 가정 보기 표시 조건에만 쓰인다.
 - 본문 전체를 `JsonNode`(또는 `Map<String, JsonNode>`)로 받아 `ConditionValidator`에 넘긴다. 왜: 키 없음과 `null`을 구분해야 하고, Boot 기본 `ACCEPT_FLOAT_AS_INT`로 `300000.5`가 잘리지 않게.
 
 ### C12a-5-2. 서버 동작과 검사 순서
@@ -222,15 +230,17 @@ FR-INP-01~07·09·10·11, FR-RES-01, CP-02, D-013, D-032, D-035, D-045.
 |---|---|---|---|
 | 0 | 필터 | 토큰 | `401 UNAUTHENTICATED` |
 | 1 | calc.web | JSON 파싱, 숫자 필드가 JSON 숫자인지, `goalType`이 알려진 코드인지(`plan.GoalType`은 plan 루트 enum), `expectedRevision`이 정수 또는 `null` | `400 MALFORMED_REQUEST` |
-| 2 | plan `PlanSaveService`(`REQUIRED` 합류) | `PlanInputValidator` + `ConditionValidator.validate(INPUT_EDIT, …)`: `REQUIRED`·`OUT_OF_RANGE`·`NOT_INTEGER`·`TOO_MANY_DECIMALS`·CUSTOM 이름. 걸린 필드 모두. `INPUT_EDIT`에는 CP-07 개수 제한을 걸지 않는다 | `422 VALIDATION_FAILED` |
+| 2 | plan `PlanSaveService`(`REQUIRED` 합류) | **[v4] `PlanInputValidator` 한 길**(범위 수치는 `ConditionValidator`와 **같은 `rules.yml › fields`를 읽는다**): `REQUIRED`·`OUT_OF_RANGE`·`NOT_INTEGER`·`TOO_MANY_DECIMALS`·CUSTOM 이름. 걸린 필드 모두. `INPUT_EDIT`에는 CP-07 개수 제한을 걸지 않는다 | `422 VALIDATION_FAILED` |
 | 3 | plan | 계획 있음 + `expectedRevision=null` / 계획 없음 + `≠null` / `plan.revision ≠ expectedRevision` | `409 PLAN_CHANGED` |
-| 4 | plan | `plan_version` INSERT(`source='INPUT'`, 시작월·비중 복사) → 첫 저장: 네이티브 `INSERT INTO plan … ON CONFLICT (member_id) DO NOTHING` / 수정: `UPDATE plan SET previous=current, current=:v, revision=revision+1 WHERE member_id=? AND revision=?` → 영향 0행이면 `PlanChangedException` → `PlanChanged(INPUT)` 발행(커밋 뒤 전달) | 0행 → 전체 롤백 `409 PLAN_CHANGED` |
+| 4 | plan | **[v4]** `plan_version` INSERT(`source='INPUT'`, **시작월만 복사(D-013·D-032), 비중은 요청 값 — `null`이면 `NULL`**) → 첫 저장: 네이티브 `INSERT INTO plan … ON CONFLICT (member_id) DO NOTHING` / 수정: `UPDATE plan SET previous=current, current=:v, revision=revision+1 WHERE member_id=? AND revision=?` → 영향 0행이면 `PlanChangedException` → `PlanChanged(INPUT)` 발행(커밋 뒤 전달) | 0행 → 전체 롤백 `409 PLAN_CHANGED` |
 | 5 | calc 결과 조회 서비스(#29) | 현재 계획 스냅샷을 읽고(4에서 바꾼 값), 그 버전의 PLAN `calc_run`이 없으면 계산·기록(회원 잠금, C12a-6-6) → 결과·display | 성공 `200 PlanView` / 실패면 1~4까지 롤백, `500 INTERNAL_ERROR` |
 
 - 왜 한 트랜잭션인가: 부르는 쪽이 calc라 의존 방향(calc → plan)을 그대로 두고 묶을 수 있다. 저장을 먼저 커밋하면 "계산할 수 없는 계획"이 저장되어 P-4 500 → 재저장 409 루프에 갇힌다. ERD Q4-a도 원래 한 트랜잭션이다.
 - 왜 네이티브 쿼리인가: `plan.member_id`는 할당 PK라 Spring Data `save()`가 merge를 해 두 탭 경쟁에서 조용히 덮어쓴다. `ON CONFLICT DO NOTHING`은 오류 없이 0행을 돌려준다.
 - **[v3] 네이티브 쓰기 뒤 영속성 컨텍스트를 비운다**: `@Modifying(flushAutomatically = true, clearAutomatically = true)`(또는 순서 3의 읽기를 엔티티가 아닌 프로젝션으로, A팀 재량). 왜: 순서 3에서 JPA로 읽은 `Plan` 엔티티가 1차 캐시에 남으면 순서 5의 현재 계획 조회가 **옛 `revision`·`currentVersionId`**를 돌려줘 옛 버전으로 계산하고 PlanView를 만든다(C12a-6-3 4번을 깸). #19 테스트: "저장 직후 같은 트랜잭션의 현재 계획 조회가 새 `revision`·`currentVersionId`를 돌려준다".
 - `PlanChanged(INPUT)` 리스너는 커밋 뒤 돌고, 그 버전의 `calc_run(PLAN)`이 이미 있으므로 기록을 건너뛴다(C12a-6-6).
+- **[v4] 입력 저장 경로에서 `ConditionValidator.validateChanges`를 쓰지 않는다.** 그 메서드는 `null`을 "바꾸지 않음"으로 보고 바꿀 값이 하나도 없으면 `conditionChanges REQUIRED`를 내므로, 금리·비중을 모두 `null`로 보낸 **정상 요청이 422가 된다**. 검증은 `PlanInputValidator` 한 길이다.
+- **[v4] 서버는 요청의 비중을 특별히 다루지 않는다**: "되보낸 값인지", "현재 버전 값과 같은지" 확인하지 않는다(확인을 넣으면 철회한 복사 로직이 되살아난다). 다른 탭이 먼저 비중을 바꾼 뒤 화면이 옛 값을 되보내는 경우는 순서 3의 `expectedRevision` 검사와 순서 4의 조건부 UPDATE가 **409로 이미 막는다**.
 - 보유 자산 ≥ 목표는 검증 오류가 아니다. 저장하고 `200`, `result.status = ALREADY_EXCEEDED`(FR-RES-01, CF-03).
 - 입력 수정에도 `expectedRevision`을 검사한다(Y-3, PR-08, TBD-37 "버전 확인"). 왜: 다른 탭에서 적용한 계획을 입력 화면의 오래된 값으로 덮어쓰지 않게.
 
@@ -300,9 +310,11 @@ Content-Type: application/problem+json
 | `goalAmount` | 10000 | 10000000000 | KRW | 0 | 임시(R-4). `rules.yml` 주석 "임시" |
 | `heldAssets` | 0 | 10000000000 | KRW | 0 | 임시(R-4) |
 | `goalCustomName` | 1 | 100 | CHAR | — | TBD-09 [D-074] (A면 50) |
+| `savingsRatioPct` | 0 | 100 | PCT | 0 | **[v4]** `rules.yml:13`에 **이미 있다**(코드 변경 없음, 문서를 코드와 맞춘 것) |
 
 - 같은 키는 경로와 무관하게 같은 범위(CP-02). 경로마다 다른 것은 바꿀 수 있는 키 목록뿐.
 - `rules.yml`에 금액 `step`은 두지 않는다. 서버는 원 정수면 받는다.
+- **[v4] `rules.yml › fields:`는 경로와 무관한 전역 한 벌**이고 경로별 목록은 `change-paths:`뿐이다. `INPUT_EDIT: { all-fields: true, max-fields: 0 }`이라 입력 저장 경로는 처음부터 모든 필드를 허용한다. **`INPUT_EDIT`에 `fields:` 목록을 새로 만들지 않는다**(`all-fields: true`가 깨진다). 같은 키가 경로와 무관하게 같은 범위라는 것(CP-02)은 같은 맵을 읽으므로 구조적으로 보장된다.
 
 ### C12a-5-6. 프론트 변환 규칙 (util 하나, #48)
 
@@ -311,12 +323,37 @@ Content-Type: application/problem+json
 | (d) 만원 → 원(보낼 때) | 입력 문자열이 `^\d+(\.\d{1,4})?$`이면 **소수점을 오른쪽으로 네 칸 옮기는 문자열 연산**으로 원 정수를 만든다. 부동소수 곱셈 금지. 소수 5자리 이상·형식 오류는 프론트가 막는다(`input.invalidAmountFormat`) | `"30"` → 300000, `"34.5"` → 345000, `"0.0001"` → 1 |
 | (d) 원 → 만원(채울 때) | 원 정수 문자열을 왼쪽으로 네 칸 옮기고 끝의 0과 소수점을 지운다. 반올림·내림 없음 | 300000 → `"30"`, 345000 → `"34.5"`, 1 → `"0.0001"` |
 | (e) 기간 | 보낼 때 `년 × 12 + 월`, 채울 때 `년 = floor(m / 12)`, `월 = m % 12` | 36 → 3년 0개월 |
-| (f) 422 범위 문구 | `KRW`: **[v3] 0이면 `unit.won` 틀로 "0원"(D-061)**, 그 밖은 (d)로 만원 문자열 + 천 단위 쉼표를 `unit.manwon` 틀로("약" 없음, 정확한 값). `MONTH`: `unit.month` "{y}년 {m}개월"(1 → "0년 1개월", 360 → "30년 0개월"). `PCT`: `unit.pct` "연 {값}%"(JSON 숫자 그대로). `CHAR`: `unit.char` "{n}자" | `10000000` → "1,000만원", `0` → "0원", `10000000000` → "1,000,000만원" |
+| (f) 422 범위 문구 | `KRW`: **[v3] 0이면 `unit.won` 틀로 "0원"(D-061)**, 그 밖은 (d)로 만원 문자열 + 천 단위 쉼표를 `unit.manwon` 틀로("약" 없음, 정확한 값). `MONTH`: `unit.month` "{y}년 {m}개월"(1 → "0년 1개월", 360 → "30년 0개월"). `PCT`: `unit.pct` "연 {값}%"(JSON 숫자 그대로) — **[v4] 단 `field: savingsRatioPct`일 때는 `unit.ratioPct` "{값}%"**(비중 100이 "연 100%"로 잘못 읽힌다). `CHAR`: `unit.char` "{n}자" | `10000000` → "1,000만원", `0` → "0원", `10000000000` → "1,000,000만원" |
 | 금리 칸 | `savingsRateInputPct`는 JSON 숫자 그대로 칸에 넣고, 보낼 때 칸 문자열을 JSON 숫자로. 소수 3자리 이상은 서버 `TOO_MANY_DECIMALS` | |
 
 - 단위 테스트(#48): `34.5 ↔ 345000`, `0.0001 ↔ 1`, `30 ↔ 300000`, `12.34567` 거절, `1.1 → 11000`(부동소수 오류 없음), 360 ↔ 30년 0개월, **[v3] KRW 0 → "0원"**.
 - **[v3] util 위치**: `frontend/src/features/input/**` **밖** 공용 폴더(예: `frontend/src/shared/units/**`, 이름 재량). #48이 만들고 #51(입력 채우기)이 가져다 쓴다. 왜: 두 Issue의 paths가 달라 한쪽 폴더에 두면 다른 쪽이 paths 밖을 고친다. `goal.<CODE>` 표시 helper(미지 코드 대체)도 같은 폴더.
 - 왜 소수 허용인가: 만원 칸(TBD-09)을 유지하면서 대화로 적용한 원 단위 값(345,000원 등)을 잃지 않고 보여 준다. 내림은 값이 조용히 바뀌고, 원 단위 칸은 TBD-09와 다르다.
+
+**[v4] (g) 비중 산출** (FR-INP-08, D-085·D-087) — 같은 공용 폴더 util의 함수 하나. #48이 만들고 #51이 쓴다.
+
+- 적금·ETF 월 납입액 두 칸을 (d)로 원 정수 `a`·`b`로 바꾸고 `s = a + b`.
+- `s === 0`이면 **"칸 비움"**으로 본다((h) 참고). 두 칸은 `rules.yml`에 없는 필드라 서버 422가 없고, 프론트는 형식(d)과 음수 불가만 본다. **두 칸에 `REQUIRED`를 걸지 않는다**(빈 칸은 오류가 아니다).
+- 그 밖에는 **정수 연산, 0.5는 올림(HALF_UP)**: `r = floor((200 × a + s) / (2 × s))`. 부동소수 `Math.round(a / s * 100)`은 **쓰지 않는다**(12.5·87.5류에서 값이 갈린다). 값이 커지면 `BigInt`.
+- 단위 테스트: `(100,20)→83`, `(1,1)→50`, `(1,2)→33`, `(2,1)→67`, `(1,7)→13`, `(7,1)→88`, `(0,5)→0`, `(5,0)→100`, `(0,0)→칸 비움`.
+- 양쪽을 다 입력했는데 반올림으로 `0`·`100`이 되는 경우(적금 1원 : ETF 1,000만원)는 **막지 않는다**. 1~99로 조이면 서버 범위와 다른 프론트 하드코딩이 된다. 결과 화면 조건 바가 실제 저장값을 보여 준다.
+- **이 util은 금액을 계산하지 않는다.** 비중(비율) 하나만 만든다. 이것이 NFR-INT-01의 예외인 근거는 D-087이다(D-084와 같은 모양).
+
+**[v4] (h) 토글 → 요청 `savingsRatioPct`** (D-086)
+
+| 화면 상태 | 요청 값 |
+|---|---|
+| 토글 OFF (첫 입력이거나 사용자가 끔) | `null` → `NULL` 저장 → 계산은 기본 비중 |
+| 토글 ON + 납입액 칸을 채움 | (g)로 산출한 값 |
+| 토글 ON + 납입액 칸 비움(주로 복원) | **가장 최근 응답의 `plan.savingsRatioPct ?? null`을 가공 없이 되보낸다**(= 현재 비중 유지). 되보낼 값이 없으면 `null` |
+
+- **키는 항상 채운다.** `undefined`로 두면 키가 사라져 `422 REQUIRED`가 난다.
+- **값의 출처는 "가장 최근 응답"**이다. `revision`을 새로 받는 모든 경로(P-3·P-4·P-5 응답)에서 비중도 같은 응답 값으로 갱신하고, 되보낼 값은 **저장을 누르는 시점의 공유 store(#13)**에서 읽는다. 서버는 이것을 막을 수 없다.
+- **`loadPlan()`이 확정되기 전에는 저장 버튼을 비활성**한다. 확정 전에 저장하면 "ON·칸 비움"과 "OFF"를 구분할 수 없어 `null`이 가고 서버에 있던 비중이 지워진다.
+- **토글이 OFF면 납입액 두 칸을 비활성**한다. 토글을 끄면 기본 비중으로 돌아간다는 사실은 `input.existingSavingHelp`로 토글 아래 **상시 노출**한다(문구에 "5:5" 수치를 적지 않는다 — 기본 비중은 기준 데이터 한 곳에만).
+- 왜 되보내기인가: 비중을 바꾸지 않는 일반 수정(목표 금액만 고침)에서 **대화·대안으로 적용한 비중이 지워지지 않게** 하면서, `null`의 뜻을 "사용자가 정한 비중 없음 = 기본 비중"으로 하나로 유지한다. 화면이 기본 비중 `50`을 만들어 보내는 안은 수치를 두 곳에 두게 되어 쓰지 않는다(CP-02).
+- 단위 테스트(#48, 요청 본문 기대값) **6경우**: ① OFF → `null` / ② ON·칸 채움 → 산출값 / ③ 복원 ON·칸 비움 → 응답 값 그대로 / ④ 첫 입력 OFF → `null` / ⑤ OFF → ON으로 켜고 칸 채움 → 산출값 / ⑥ 모든 경우에 키가 본문에 있다.
+- **사용자가 토글을 직접 끄고 저장하면 대화·대안으로 적용했던 비중이 기본 비중으로 돌아간다.** D-085의 "나중 변경이 이긴다"에 부합한다(D-086).
 
 ---
 
@@ -485,10 +522,11 @@ FR-PLAN-05·06, FR-RES-01~07, FR-INP-11, NFR-INT-02, D-010, D-062, D-072.
 | 3구간(FR-RES-03, #50) | `["GOOD","AVG","BAD"]` 고정 순서로 돌며 `result.scenarios`에 있는 것만 그린다. 칸마다 `display["<S>.afterTaxAsset"]`, `["<S>.gapToGoal"]`, 도달 시점은 `isAchieved`면 `display["<S>.goalReachMonth"]`, 아니면 문구표 `result.notReachedInPeriod`. 아래 고지 한 줄은 `result.scenarioNotice`(D-029) | 시나리오 수(1이면 ETF 0%), `isAchieved` |
 | 그래프(FR-RES-04, #50) | 목표선 라벨 `display["goalAmount"]`, 가로축 양 끝 `display["calcStartMonth"]`·`display["targetMonth"]`, 시나리오 최종값 라벨 `display["S.afterTaxAsset"]`. 세로축 눈금 숫자·툴팁·점별 월 라벨은 없다(R-5) | `monthlyPoints[].afterTaxAsset`(점 위치), `result.goalAmount`(목표선 높이) |
 | 초과 안내(FR-RES-01, #49) | **문구표 `result.alreadyExceeded`**(결과 화면용) 안에 `display["goalAmount"]`, `display["conditions.heldAssets"]`. 초과 금액 없음 | `view.status === "ALREADY_EXCEEDED"` → 요약·3구간·그래프·대안 숨김, F-3 안 부름(D-062) |
-| 가정 보기(FR-RES-06, #49) | `display["assumptions.taxRatePct"]` + 문구표 `tax.note`(D-067), `display["conditions.savingsRateInputPct"]`, `display["assumptions.savingsRateBaseMonth"]`·`["assumptions.sp500BaseDate"]`(없으면 줄 생략), 문구표 `excluded.<CODE>`, `scenarioMethod.<CODE>` | `result.assumptions.excludedItems`, `scenarioMethod`, `isDefaultSavingsRate` |
+| 가정 보기(FR-RES-06, #49) | `display["assumptions.taxRatePct"]` + 문구표 `tax.note`(D-067), `display["conditions.savingsRateInputPct"]`, `display["assumptions.savingsRateBaseMonth"]`·`["assumptions.sp500BaseDate"]`(없으면 줄 생략), 문구표 `excluded.<CODE>`, `scenarioMethod.<CODE>`. **[v4] CF-08 ② 차액 안내: 문구표 `assumptions.ratioAppliedToAll`(금액 없는 고정 문장) + `display["conditions.savingsRatioPct"]`** | `result.assumptions.excludedItems`, `scenarioMethod`, `isDefaultSavingsRate`. **[v4] 차액 안내 조건은 `plan.savingsRatioPct !== null`** |
 | 면책(FR-RES-07, #49) | 문구표 `disclaimer` | — |
-| 입력 수정 채우기(FR-INP-11, #51) | 입력칸 값: `plan.*` → C12a-5-6 (d)(e). 현재 비중 읽기 전용 한 줄: `input.currentRatioLabel` + `display["conditions.savingsRatioPct"]`. 재로그인 보유 자산 안내: `input.heldAssetsRecheck`(D-035) + `display["calcStartMonth"]` | `plan.savingsRateInputPct === null`이면 금리 칸 비움 |
+| 입력 수정 채우기(FR-INP-11, #51) | 입력칸 값: `plan.*` → C12a-5-6 (d)(e). 현재 비중 읽기 전용 한 줄: `input.currentRatioLabel` + `display["conditions.savingsRatioPct"]`. 재로그인 보유 자산 안내: `input.heldAssetsRecheck`(D-035) + `display["calcStartMonth"]`. **[v4] 토글 복원(D-089): `plan.savingsRatioPct !== null`이면 토글 ON**(값이 `50`이어도 ON), `null`이면 OFF. **납입액 두 칸은 복원하지 않고 비운다**(저장하지 않으므로, D-043) — 빈 칸은 오류가 아니고 도움말 `input.ratioKept`를 둔다 | `plan.savingsRateInputPct === null`이면 금리 칸 비움 |
 
+- **[v4] 차액 안내(CF-08 ②, D-088)에 금액을 쓰지 않는다.** 금액을 쓰면 화면이 "월 저축 가능 금액 − 납입액 합계"를 계산해야 하고(NFR-INT-01), 납입액은 저장하지 않으므로(D-043) 새로고침·재로그인 뒤에는 합계를 알 수 없다. **서버 `display`·`assumptions`에 필드를 더하지 않는다** — 서버는 납입액을 받지 않아 차액을 모른다.
 - 대안 영역(Should)은 이 표 밖.
 
 ### C12a-7-1. 문구표 키 전체 목록 (#18) [v3, 신설]
@@ -505,6 +543,10 @@ FR-PLAN-05·06, FR-RES-01~07, FR-INP-11, NFR-INT-02, D-010, D-062, D-072.
 | | `input.invalidAmountFormat` | #48 | 만원 칸 형식 오류·소수 5자리 이상 |
 | | `input.currentRatioLabel` | #51 | 현재 비중 읽기 전용 줄의 라벨 |
 | | `input.heldAssetsRecheck` | #51 | D-035 재로그인 보유 자산 확인 안내(`{calcStartMonth}` 자리) |
+| | **[v4]** `input.existingSavingToggle` | #127 | '지금 하고 있는 저축' 토글 라벨 |
+| | **[v4]** `input.existingSavingBank` / `input.existingSavingEtf` | #127 | 적금·ETF 월 납입액 칸 라벨 |
+| | **[v4]** `input.existingSavingHelp` | #127 | 토글 아래 상시 노출. 납입액은 비중을 정하는 데만 쓰고 저장하지 않음(D-043) + 끄면 기본 비중으로 돌아감(수치 없이) |
+| | **[v4]** `input.ratioKept` | #127 | 토글 ON인데 납입액 칸이 비었을 때 "현재 비중을 그대로 쓴다"는 도움말 |
 | 422 안내 틀 | `validation.REQUIRED` | #47·#48 | 값을 입력해 주세요 |
 | | `validation.OUT_OF_RANGE` | #48 | `{min}`~`{max}` 사이(자리에 아래 단위 틀 결과) |
 | | `validation.NOT_INTEGER` | #48 | 정수로 입력 |
@@ -513,6 +555,7 @@ FR-PLAN-05·06, FR-RES-01~07, FR-INP-11, NFR-INT-02, D-010, D-062, D-072.
 | | `unit.won` | #48 | `{v}원`(KRW 0 → "0원", D-061) |
 | | `unit.month` | #48 | `{y}년 {m}개월` |
 | | `unit.pct` | #48 | `연 {v}%` |
+| | **[v4]** `unit.ratioPct` | #127 | `{v}%` (비중 422 문구. `unit.pct`를 쓰면 "연 100%"가 된다) |
 | | `unit.char` | #48 | `{n}자` |
 | 계획 | `plan.changedElsewhere` | #48·#51 | 계획이 다른 곳에서 바뀌었음. 다시 저장하면 입력한 값으로 바뀜 |
 | 되돌리기 | `undo.nothingToUndo` | #51 | 이미 되돌렸음 |
@@ -522,6 +565,7 @@ FR-PLAN-05·06, FR-RES-01~07, FR-INP-11, NFR-INT-02, D-010, D-062, D-072.
 | | `result.notReachedInPeriod` | #50 | 기간 안에 도달하지 않음(planContext C1a-11 ai 문장과 같은 뜻) |
 | | `result.scenarioNotice` | #50 | 3구간 고지 한 줄(D-029) |
 | | `result.defaultSavingsRate` | #49 | 기본 금리 표시 |
+| | **[v4]** `assumptions.ratioAppliedToAll` | #127 | 가정 보기 차액 안내. **금액 없는 고정 문장**(월 저축 가능 금액 전체를 현재 비중대로 나눠 계산했다) + `display["conditions.savingsRatioPct"]` (CF-08 ②, D-088) |
 | 이름 | `goal.<CODE>` | #48·#49 | 7개(쟁점 X-2 목록) |
 | | `scenario.GOOD`·`scenario.AVG`·`scenario.BAD` | #49·#50 | 시나리오 이름 |
 | planContext 공유 | `tax.note`, `excluded.<CODE>`, `scenarioMethod.<CODE>` | #49 | ai-server와 같은 키(CP-05, D-067) |
@@ -529,6 +573,9 @@ FR-PLAN-05·06, FR-RES-01~07, FR-INP-11, NFR-INT-02, D-010, D-062, D-072.
 
 - **`result.alreadyExceeded`와 `chat.alreadyExceeded`는 다른 키다.** `result.*`는 결과 화면(#49, FR-RES-01), `chat.*`는 대화창(#52, D-072 문장)이다. #18에는 지금 `chat.alreadyExceeded`만 있으므로 `result.alreadyExceeded`를 더한다(Y-18). 둘을 하나로 합치지 않는 이유: 놓이는 화면과 자리 표시(결과 화면은 금액 두 개)가 다르다.
 - #12-b H-15의 키(폴링 실패, F-1·F-5 토스트, F-4 카드 실패, `achievementChange`, 조건 라벨)는 그대로 둔다.
+- **[v4] `toast.applyStaleComparison`(#12-b·#53)의 문장을 교체한다.** 지금 문장("가장 최근 비교 결과만 적용할 수 있어요")은 원인이 "최신 비교 아님"일 때만 맞다. 입력 화면에서 계획이 바뀐 경우도 같은 `STALE_COMPARISON` 코드라 프론트가 원인을 가를 수 없으므로, 둘을 함께 덮는 문장으로 바꾼다("계획이 바뀌었거나 더 최근 비교가 있어요. 최신 비교를 다시 받아 적용해 주세요"). **새 키·새 오류 코드는 만들지 않는다.**
+- **[v4]** 비중이 입력 화면과 대화·대안 양쪽에서 바뀌어도 **비중 전용 처리는 필요 없다**: 같은 탭에서는 D-069가 `revision`이 바뀔 때 적용 버튼을 먼저 끄고, 새로고침 뒤에는 F-4 `applicable=false`가 서버에서 버튼을 끈다. `STALE_COMPARISON` 409는 **다른 탭에서 입력을 저장한 경우**에만 남으며, 입력 저장은 값이 같아도 항상 새 버전이므로 비중 변경이 특별한 경우가 아니다. 모두 v3·#33(CLOSED)·#53 수용 기준에 이미 있는 동작이다.
+- 모든 문장에 '추천' 표현을 쓰지 않는다(D-083, CP-06).
 
 ---
 
@@ -757,8 +804,9 @@ record PlanUndoResult(long planVersionId, long revision) {}
 | `plan/post-undo.409-plan-changed.json` | P-5 | 409 | `PLAN_CHANGED` |
 | `plan/post-undo.409-no-plan.json` | P-5 | 409 | `NO_PLAN` |
 | `plan/post-undo.500.json` | P-5 | 500 | `INTERNAL_ERROR` |
+| **[v4]** `plan/get-plan.200-ratio83.json` | P-4 | 200 | `plan.savingsRatioPct: 83`, `display["conditions.savingsRatioPct"]` "적금 83 : ETF 17". 나머지는 기본 목(A-1) 복사. `useMock` 전용 — 토글 ON 복원·되보내기 시험용 |
 
-- **총 29개**(auth 6, plan 23). P-6 목은 없다(#68). 공통 401은 #12-b `chat/common.401-unauthenticated.json` 재사용.
+- **[v4] 총 31개**(auth 6, plan 25). 요청 오류 전용 목은 만들지 않는다(화면이 항상 0~100을 보내고, 목은 응답 고정 JSON이라 요청을 검증하지 못한다 — 요청 본문은 (h) 단위 테스트로 확인한다). *v3 본문의 "29개"는 `put-plan.422-custom-name`이 빠진 수였다. 현재 파일은 30개이고 `frontend/src/mocks/README.md:11`도 30이라 적고 있어, 이 목을 더해 **31**로 맞춘다.* P-6 목은 없다(#68). 공통 401은 #12-b `chat/common.401-unauthenticated.json` 재사용.
 - 9번 뒤의 GET은 마지막 응답(`rev 14`)을 반복한다. C12a-6-7 규칙 1로 무시되어 화면은 `rev 15`를 유지한다.
 - Issue #12 수용 기준 "정상, 422, 401, 409": P-1(200·422·401), P-3(200·422·409), P-4(200·409·401), P-5(200·409). 400·500도 있다.
 
@@ -812,7 +860,7 @@ record PlanUndoResult(long planVersionId, long revision) {}
 |---|---|---|---|
 | 1 | 엔드포인트별 요청·응답·오류 예시 | C12a-3~C12a-10 | |
 | 2 | plan → chat 의존 없음 | C12a-11-1(plan `{}`) | |
-| 3 | 목 JSON으로 정상·422·401·409 | C12a-12(29개) | |
+| 3 | 목 JSON으로 정상·422·401·409 | C12a-12(**[v4] 31개**) | |
 | 4 | 401 본문 C3-1 | C12a-2-3, C12a-10 | #16 |
 | 5 | 422 `min`·`max`·`unit`, display 없음 | C12a-5-4 | |
 | 11 | 인증·배포 전제 | C12a-2. 수용 기준 문장을 C12a-2-2의 R-12 문장으로 고친다 | J-1 |
@@ -833,7 +881,7 @@ record PlanUndoResult(long planVersionId, long revision) {}
 | R-6 | 합의: `local` 프로필만 false. 데모 방식은 **쟁점 X-3** |
 | R-7 | 합의: P-3 응답 = `PlanView` |
 | R-8 | 합의: P-6은 #68 |
-| R-9 | 합의: 비중 복사 + 입력 화면 읽기 전용 |
+| R-9 | **[v4] 개정(D-086)**: 입력 저장은 요청의 `savingsRatioPct`를 **그대로 저장**한다(`null` → `NULL` → 계산은 기본 비중). **복사하지 않는다.** 입력 화면은 비중을 정할 수 있다(D-085가 "읽기 전용" 전제를 철회). v3 문장은 "비중 복사 + 입력 화면 읽기 전용"이었다 |
 | R-10 | 합의: `409 NO_PLAN` |
 | R-11 | 해소: 두 차례 `gh api` 대조 |
 | R-12 | 합의: C12a-2-2 문장 |
@@ -917,3 +965,20 @@ record PlanUndoResult(long planVersionId, long revision) {}
 | J-15 | 기획 문서 정정: `b-team-contracts.md` §4·`alignment.md` 2-4(Y-8), `frontend-api-chat.md:413` 예시 `max` 10000000(Y-9), C12b-7-3·plan-context C1a-10 "2행 무해" → "활성 버전·`engine_version`이 그대로인 동안 생기지 않음"(Y-17) | 기획 | project-workspace(협상 마무리 때) | — |
 | J-16 | 데모 환경: (1) 접속 주소가 HTTPS인지, 아니면 그 프로필 `auth.cookie.secure=false`(시연 브라우저로 `localhost` `Secure` 쿠키 확인), (2) JWT 서명 키 환경 변수, (3) 초기화 절차에 "열린 브라우저는 새로고침 또는 다시 로그인"(Y-22) | 공통 | **#58** | 프로필 파일을 바꾸면 paths에 `backend/src/main/resources/application-*.yml`. (X-3) B면 새 배포 Issue가 (1)을 가져간다 |
 | J-17 | P-6 요청·오류·목 확정(Should, 2주차 말) | A | **#68** | — |
+
+### C12a-16-v4. v4 개정 후속 작업 (D-058: 기존 Issue 본문에 반영) [v4]
+
+> 2026-11-20. 모두 **moeun #127**(`[plan] 지금 하고 있는 저축 토글과 적금:ETF 비중`) 하나에 들어간다. 새 Issue를 만들지 않는다. 자세한 근거는 `frontend-api-plan-v4-proposal.md`.
+
+| # | 작업 | Issue |
+|---|---|---|
+| K-1 | 요청 필드 수용: `PlanResultController`의 `NULLABLE_REQUIRED_KEYS`·`NUMBER_FIELDS`에 키 추가, `PlanInputValidator.checkOptional` 1줄, `PlanService`의 비중 복사 삭제(요청 값 그대로). 검사 순서 2·4대로, `ConditionValidator.validateChanges` 사용 금지, **`rules.yml`은 손대지 않는다** | #127 |
+| K-2 | 서버 테스트 6경우(83 저장 / `null` → `NULL` + 기본 비중 결과 / 101 `OUT_OF_RANGE` / 83.5 `NOT_INTEGER` / 키 누락 `422 REQUIRED` / 문자열 `400`) + `docs/PlanResultDocsTest` 요청 스니펫 | #127 |
+| K-3 | 입력 화면: 토글·납입액 두 칸, (g) 산출 util(공용 폴더), (h) 요청 값 표 + 단위 테스트 6경우, 복원 규칙(D-089), `loadPlan()` 확정 전 저장 비활성, OFF면 칸 비활성 | #127 |
+| K-4 | 가정 보기 고정 문장(D-088, 금액 없음, 조건 `savingsRatioPct !== null`) | #127 |
+| K-5 | 목 `get-plan.200-ratio83.json` 추가(30 → 31), README 개수·`mocks.test.mjs` | #127 |
+| K-6 | 문구 키 7개 추가 + `toast.applyStaleComparison` 문장 교체(#18은 CLOSED이므로 키가 필요한 Issue가 더한다) | #127 |
+| K-7 | moeun `docs/api/frontend-api.md` 요청 표·범위 표·"요청에 없는 것"(246행) 정정 | #127 |
+| K-9 | "토글을 끈 입력 저장은 적용된 비중을 기본 비중으로 되돌린다"를 B팀에 알림 | #64·#66 본문 한 줄 (**후속**) |
+
+- `#127` 선행: 계약 v4 합의가 끝나 `status:blocked` → `status:ready`. 코드 선행 #19·#30은 이미 머지돼 추가 선행 없음.
