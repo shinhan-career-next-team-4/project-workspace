@@ -959,7 +959,7 @@ spec-verifier, finance-domain-reviewer, tech-architect가 질문을 추가한다
 ## 10차 점검 (2026-11-20, 대화·비교로 바꿀 수 있는 조건 넓히기 협상)
 
 ### 10차 점검 요약
-- **개발 차단: 3건** (Q-085·Q-086·Q-087). 모두 사람이 정해야 하고, 정해지기 전에는 계약 최종본·SRS·moeun Issue를 고치지 않았다.
+- **개발 차단: 0건** (Q-085·Q-086·Q-087 모두 결정됨 → D-090~D-092).
 - 발단: 입력 화면을 한 번 거친 뒤에는 계획 조건을 **AI 대화로만** 바꾸고 결과 화면의 '입력 수정' 버튼은 나중에 없애는 제품 방향. 지금은 대화·비교로 목표 금액·보유 자산을 못 바꿔(`FIELD_NOT_CHANGEABLE`), FR-RES-01의 "목표 금액은 입력 수정에서 바꿀 수 있어요" 안내가 버튼이 사라지면 막다른 길이 된다.
 - 협상 문서: 초안 `changeable-fields-v1.md` → 검토 2건 → `v2` → 재검토 2건 → `v3` → 합의안 `changeable-fields-proposal.md`. **합의 26건, 남은 쟁점 3건.**
 - 재검토에서 쟁점 4건이 닫혔다: X-A(초과 계획의 목표 상향 — 제공자가 3-2 권고를 철회하고 3-1로 이동), X-C(COMPARE 동시 개방 — 소비자가 보류 철회), X-D(Issue reopen 혼합), X-E(모르는 키는 해당 ASSISTANT 메시지 FAILED).
@@ -972,7 +972,7 @@ spec-verifier, finance-domain-reviewer, tech-architect가 질문을 추가한다
 - 선택지: A) 둘 다 이번에(사용자 원안, Spring ≈4.3일/B팀 ≈6.5~7.2인일, C2-6 개정 포함) / B) 목표 금액만, 보유 자산은 2단계(Spring ≈3.3일/B팀 ≈4.2~4.7인일)
 - 기획 추천: **B** — 단 2단계를 같은 결정에서 못 박고 '입력 수정' 버튼 제거(T-13)의 선행을 "2단계 완료"로 적는다
 - 관련: CP-07, FR-INP-05, FR-RES-01, D-035, D-040
-- 상태: 미결
+- 상태: 결정됨 → D-090 (선택지 B)
 
 ### Q-086 moeun #132 선행을 언제까지 기다릴까?
 - 분류: **개발 차단**
@@ -980,7 +980,7 @@ spec-verifier, finance-domain-reviewer, tech-architect가 질문을 추가한다
 - 선택지: A) 선행 유지 / B) 지금 흡수(#132를 닫고 신규 1건에 통합) / C) 기한을 정하고 자동 전환
 - 기획 추천: **C** — 제공자 제안대로 "PR이 올라오지 않은 채 하루가 더 지나면 흡수"
 - 관련: moeun #132, D-058
-- 상태: 미결
+- 상태: 결정됨 → D-091 (선택지 C)
 
 ### Q-087 기존 결정 3건을 바꾸는 것을 확인해 주세요
 - 분류: **개발 차단**
@@ -989,4 +989,4 @@ spec-verifier, finance-domain-reviewer, tech-architect가 질문을 추가한다
   2. **D-071 변경** — "초과 계획에서 조건을 바꾸면 `ALREADY_EXCEEDED` 고정 문장"을 **"목표를 바꾸지 않거나, 바꿔도 여전히 초과일 때만"** 으로. 바꿔서 초과를 벗어나면 정상 비교. 이것이 이번 변경의 핵심 사용 사례입니다
   3. **internal-calc C2-4 불변식 개정** — `current`·`changed` 각각 `ALREADY_EXCEEDED`일 수 있고 그 쪽은 `scenarios: []`. **Spring 코드 변경은 0**(`CalcResultView.status`가 이미 있음), 계약 문구·타입만
 - 관련: D-040, D-056, D-059, D-071, CP-07, FR-AI-01, FR-RES-01, internal-calc C2-4
-- 상태: 미결
+- 상태: 결정됨 → D-092

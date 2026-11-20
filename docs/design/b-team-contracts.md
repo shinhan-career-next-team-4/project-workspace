@@ -90,7 +90,7 @@
 ### C-2. ai-server → Spring `POST /internal/calc` — 요청 있음, 응답 필요(초안)
 - 경로: `ai-server/README.md`, `ai-server/app/tools/calc.py`(`CalcClient.recalculate`), `backend/.../calc/package-info.java`
 - 헤더: `X-Internal-Api-Key`
-- 요청(현재 정의 그대로, 단 필드는 4개로 줄임 — D-040):
+- 요청(현재 정의 그대로, 허용 필드는 5개 — D-090·D-092, D-040 대체):
 ```json
 {
   "memberId": 7,
@@ -98,7 +98,7 @@
   "conditionChanges": { "monthlySavingAmount": 500000 }
 }
 ```
-  - 허용 키: `monthlySavingAmount`, `savingsRatioPct`, `savingsRateInputPct`, `targetPeriodMonths`. 그 밖의 키는 C-3 `FIELD_NOT_CHANGEABLE`.
+  - 허용 키: `goalAmount`, `monthlySavingAmount`, `savingsRatioPct`, `savingsRateInputPct`, `targetPeriodMonths` (1단계 `HELD_ASSETS`는 2단계 보류). 그 밖의 키는 C-3 `FIELD_NOT_CHANGEABLE`.
   - 기준은 항상 그 회원의 **현재 계획**(`plan.current_version_id`)이다. 이전 대화의 변경을 누적하지 않는다(D-041).
   - 시작월은 현재 계획의 `calc_start_month`를 쓴다(D-013).
 - 응답(필요, 초안):
@@ -138,9 +138,9 @@ HTTP 422
 | HTTP | code | 언제 | ai-server 동작 |
 |---|---|---|---|
 | 422 | `VALIDATION_FAILED` (`reason`: `OUT_OF_RANGE`, `REQUIRED`, `NOT_INTEGER`) | CP-02 범위 밖 | `CLARIFY`로 끝내며 `min`·`max`·`unit`을 인용해 되묻기(D-033) |
-| 422 | `FIELD_NOT_CHANGEABLE` | 대화로 못 바꾸는 조건(목표 금액 등) | `OUT_OF_SCOPE` 또는 "입력 수정에서 바꿀 수 있어요" 안내(D-040) |
+| 422 | `FIELD_NOT_CHANGEABLE` | 대화로 못 바꾸는 조건(목표 종류·기존 납입액·1단계 보유 자산 등) | `ANSWER` + `chat.unchangeableCondition` 고정 문구(D-056·D-090) |
 | 409 | `NO_PLAN` | 저장된 계획이 없음 | `ANSWER`로 "먼저 계획을 만들어 주세요" |
-| 409 | `ALREADY_EXCEEDED` | 현재 계획이 이미 목표 초과(FR-RES-01) | 계산 없이 안내 |
+| 409 | `ALREADY_EXCEEDED` | 현재 계획이 이미 목표 초과이고 목표를 바꾸지 않거나 바꿔도 여전히 초과일 때(D-092) | 계산 없이 `chat.alreadyExceeded` 안내 (목표를 올려 초과를 벗어나면 200 비대칭 비교) |
 | 401 | `INVALID_INTERNAL_KEY` | 내부 키 불일치 | `AgentError` → FAILED |
 | 5xx | `CALC_FAILED` | 엔진 오류 | `AgentError` → FAILED(FR-AI-04) |
 - 범위 수치(`min`, `max`)는 TBD-09·TBD-10이 정해지기 전까지 `rules.yml`의 임시값을 그대로 내보낸다. ai-server는 수치를 하드코딩하지 않는다.
