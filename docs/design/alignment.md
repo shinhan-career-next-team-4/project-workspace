@@ -23,7 +23,7 @@
 | 순위 | 항목 | 한 줄 요약 | 제안 |
 |---|---|---|---|
 | 1 | 대화 보관 기간 | D-030은 "대화 기록은 세션 동안만", moeun은 `chat_message` 영속 저장 + 무상태 JWT라 "세션 끝"이 없음 | 팀 결정 필요 (Q-041 후보) |
-| 2 | 대화로 바꿀 수 있는 조건 | D-040은 4개(월 저축액·비중·적금 금리·기한), moeun의 `ConditionChanges`·도구 스키마·프롬프트·범위 밖 문구는 7개(목표 금액·보유 자산·기존 납입액 포함) | moeun 맞춤 |
+| 2 | 대화로 바꿀 수 있는 조건 | (해소 이력) D-040은 4개였으나 D-090·D-092로 **5개**(`goalAmount` 추가, `heldAssets`는 2단계, 목표 종류·기존 납입액 제외)로 확장 | 해소(D-090·D-092) |
 | 3 | 대화 비교 결과의 계약 | `/internal/calc` 응답이 `{calcRunId, ...결과}`로만 적혀 있고, 검증 오류 형식·"내 계획 vs 바꾼 조건" 차이 값이 없음. 그대로면 LLM이 차이를 직접 계산하게 됨(FR-AI-02 위반 위험) | 합의 필요 (B팀 계약 C-2, C-3) |
 | 4 | 재계산 시 시작월 | `CalcInput.calcStartMonth` 주석이 "재계산할 때는 현재 월이 들어온다". D-013(확정)은 어떤 동작도 시작월을 새로 정하지 않음 | moeun 맞춤 |
 | 5 | 세션 관리 | NFR-SEC-02·D-031은 "서버 세션", moeun은 무상태 JWT(ADR-002, 사용자 확인). 폴링은 토큰 연장에서 빠져 D-031 문구("서버로 가는 요청만 조작")와도 다름. HttpOnly 쿠키라 클라이언트가 토큰을 지울 수 없어 로그아웃 경로가 비어 있음 | SRS 맞춤 + 팀 결정 필요 (Q-042 후보) |
@@ -55,7 +55,7 @@
 
 | 항목 | SRS·결정(ID) | moeun 현재 설계(파일) | 차이 | 영향 | 제안 |
 |---|---|---|---|---|---|
-| 대화로 바꿀 수 있는 조건 | D-040·CP-07 4개(월 저축액, 비중, 적금 금리, 기한). 목표 금액은 입력 수정 | `ConditionChanges` 7개 필드(목표 금액, 보유 자산, 기존 납입액 포함), 도구 `recalculate` 스키마도 7개, 시스템 프롬프트 범위 안내도 7개, `OUT_OF_SCOPE_COPY`는 "목표 금액, 기간, 월 저축액 같은 조건"을 안내 (`ai-server/app/schemas.py`, `app/llm/agent.py`, `app/llm/prompts.py`) | moeun이 3개를 더 허용 | 상 | **moeun 맞춤**. 도구 스키마·프롬프트·문구를 4개로 줄이고, Spring `ConditionValidator`의 `rules.yml › change-paths.CHAT.fields`도 4개로 둔다(서버가 최종 거부). `ConditionChanges` 모델 자체는 다른 경로와 공유하면 남겨도 됨 |
+| 대화로 바꿀 수 있는 조건 | D-090·D-092·CP-07 **5개**(목표 금액, 월 저축액, 비중, 적금 금리, 기한; 보유 자산은 2단계). 목표 종류·기존 납입액은 제외 | `ConditionChanges`는 #21에서 4개로 축소됐으나, CF12(D-090·D-092)로 `goalAmount`를 추가한 **5개**로 재확장한다(`rules.yml`·`InternalCalcController`·`PlanContextProviderImpl`·`ai-server`) | 5개 기준으로 정렬 필요 | 상 | **5개(1단계) 기준으로 맞춤**(D-090·D-092). 도구 스키마·프롬프트·문구·Spring `CHANGEABLE_KEYS`·`rules.yml › change-paths.CHAT/COMPARE`를 5개로 맞춘다 |
 | 비교 기준(누적 여부) | D-041 기준은 항상 내 계획, 누적하지 않음 | `/internal/calc`는 `memberId`의 현재 계획에 `conditionChanges`만 얹어 계산(누적 상태 없음). 하지만 `history` 20개를 LLM에 넘겨 LLM이 이전 턴의 값을 도구 인자에 다시 넣을 수 있음 (`app/schemas.py` `ChatRequest.history`, `app/llm/agent.py`) | 서버 구조는 맞지만 LLM이 누적할 여지가 있음 | 중 | **moeun 맞춤**. 프롬프트에 "이번 발화에서 말한 조건만 넣는다"를 넣고, fake 모델 테스트로 "월 50만원 → 기간 5년" 시나리오를 고정 |
 | 범위 검증 위치 | D-033 Spring 계산 엔진 한 곳, AI는 오류를 받으면 되묻는다 | Spring `ConditionValidator.validate(path, values)`가 모든 경로를 검사 (`db/moved-to-code.md` §1·§3). ai-server `ConditionChanges`에도 `gt=0`, `le=100` 같은 형식 검사가 있음. `CalcClient`는 400/409/422를 `CalcError(resp.text)`로 모델에 그대로 넘김 (`app/tools/calc.py`) | 형식 검사가 두 곳이지만 범위(TBD-09 수치)는 Spring 한 곳. 오류 본문 형식이 정해지지 않아 LLM이 원문 텍스트를 읽고 되묻는 구조 | 중 | **SRS 맞춤 + 합의 필요**. ai-server의 형식 검사(음수·100 초과)는 "범위 검증"이 아니라 타입 검사로 보고 허용(D-033 위반 아님). Spring 오류 형식을 `ProblemDetail` 기반으로 고정(B팀 계약 C-3)해서 `field`, `min`, `max`, `unit`을 LLM이 그대로 인용하게 함 |
 | 비교 결과는 검증 통과 뒤에만 | D-033 | `assemble`이 `turn.calc_run_id`가 있을 때만 `RECALC_RESULT`로 만듦. `calc_run_id`는 `/internal/calc` 성공 시에만 채워짐 (`app/llm/agent.py`) | 일치 | 하 | 그대로 |

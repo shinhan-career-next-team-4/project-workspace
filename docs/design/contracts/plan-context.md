@@ -11,7 +11,7 @@
 > - **D-065 부호**: C1a-6 경계 표의 `-1만원 미만 미달`/`+1만원 미만 달성`이 확정. "1억 이상 `약 12,345만원`"은 모든 금액. → #28(이미 같음)
 > - **D-063·D-066**: 대화창 표시 규칙은 `frontend-api-chat.md` 머리말 보충. ai-server 가드(초과 계획 EXPLAIN은 LLM 미호출)는 그대로.
 > - **D-073 세금 응답 보장(D-067 구체화)**: 응답에 `assumptions.taxRatePct` 표시값이 있으면 ai-server가 `tax.note`를 글자 그대로 덧붙인다(모델이 이미 넣었으면 중복 안 함). 범위 밖 세금 질문은 `OUT_OF_SCOPE` + 문구표 `outOfScope.tax`. 모델 위반을 실패로 처리하지 않는다. → #35, #18
-> - **D-071**: 초과 계획의 대화 재계산은 C1a-11대로 `ALREADY_EXCEEDED` 고정 문장, 비교·적용 없음.
+> - **D-092 (D-071 변경)**: 초과 계획의 대화 재계산은 목표를 바꾸지 않거나 바꿔도 여전히 초과일 때만 `409 ALREADY_EXCEEDED` 고정 문장(`chat.alreadyExceeded`)이며, 목표를 올려 초과를 벗어나면 `200` 비대칭 비교(3-1)를 반환한다. (EXPLAIN 모드는 기존대로 LLM 없이 `chat.alreadyExceeded`)
 
 
 # `planContext` 계약 v3 (moeun #11, C-1a) — 재검토 반영본
@@ -279,14 +279,14 @@ internal-calc **C2-6의 키 규칙·형식·경계 규칙(D-055)을 그대로 �
 | 4 | 비교·차이는 `recalculate` 결과의 접두어 키(`current.`/`changed.`/`diff.`)만 인용하고 planContext의 `<S>.*`와 섞지 않는다(R-4 방어) | #23 |
 | 5 | 반영하지 않은 항목·3구간 산정 방식은 `excludedNotes`·`scenarioMethodNote` 문장을 그대로 쓴다 | #35 |
 | 6 | 구체적인 연 수익률은 말하지 않는다. "과거 데이터로 만든 구간이며 수익을 약속하지 않는다"고만 답한다. 주어지지 않은 정보는 모른다고 한다 | #35 |
-| 7 | **[D-059]** 대화로 바꿀 수 있는 네 조건(월 저축액·비중·적금 금리·기한)을 "더/덜/늘리면/줄이면"처럼 상대 표현으로 바꾸면 계산하지 않고 `CLARIFY`로 바꿀 값을 절대값으로 되묻는다(지금 값은 display로 인용 가능) | #21 |
+| 7 | **[D-059·D-092]** 대화로 바꿀 수 있는 다섯 조건(목표 금액·월 저축액·비중·적금 금리·기한)을 "더/덜/늘리면/줄이면"처럼 상대 표현으로 바꾸면 계산하지 않고 `CLARIFY`로 바꿀 값을 절대값으로 되묻는다(지금 값은 display로 인용 가능) | #21 |
 | 8 | **[D-060]** 세율은 `assumptions.taxRatePct`만 인용한다. (B면: 세율 숫자는 말하지 않고, 세금 질문은 `search_documents` 결과만 인용) | #35 |
-| 9 | `status=ALREADY_EXCEEDED`이면 초과 사실과 "목표 금액은 입력 수정에서 바꿀 수 있어요"만 말하고 초과 금액은 말하지 않는다 | #35 |
+| 9 | (쪽별 적용) `status=ALREADY_EXCEEDED`인 쪽은 초과 사실만 말하고 초과 금액·비교 문장을 만들지 않는다. 409 초과 안내는 "대화로 목표 금액을 더 높게 바꿔 볼 수 있어요"를 안내한다(D-092) | #35 |
 
 - `afterTaxGain`이 `-`로 시작할 때 "손실로 말한다" 같은 해석 규칙은 **넣지 않는다**(소비자 요청. 규칙이 늘어남). 음수 형식은 #28 Formatter 테스트로 고정한다.
 - 모델이 실제로 규칙을 지키는지는 FakeClaude로 검증되지 않는다. **소량 수동 평가 목록 3~5건**(예: A-1에서 "목표까지 얼마나 모자라요?" → `-약 288만원 미달`을 인용하는지)을 실행하고 결과를 #35 PR 본문에 적는다(G-4).
 - `prompts.py`는 #21·#22·#23·#35·#38이 같이 고친다. **#21 → #22 → #23 → #35 순서**로 처리한다(#35 선행에 명시).
-- D-040 "대화로 바꿀 수 있는 조건 4개"로 `SYSTEM_PROMPT`를 고치는 일(D-10)은 **#21의 기존 범위**라 G-3에서 뺐다([v3]).
+- `SYSTEM_PROMPT`의 대화 변경 가능 조건은 D-090·D-092에 따라 **5개**(목표 금액 추가, 1단계)로 갱신한다(#21).
 
 ## C1a-9. 키 표기 camelCase [합의]
 
@@ -351,7 +351,7 @@ public record PlanContextView(long calcRunId, ConditionsView conditions, CalcRes
 | 키 | 쓰는 곳 | 문장(확정은 #18) |
 |---|---|---|
 | `chat.noPlan` | 계획 없음, `/internal/calc` `NO_PLAN`(C3-2)과 같은 문장 | "먼저 목표와 조건을 입력해 계획을 만들어 주세요" |
-| `chat.alreadyExceeded` | 초과 EXPLAIN, `/internal/calc` `ALREADY_EXCEEDED`(C3-2)와 같은 문장 | 초과 사실 + "목표 금액은 입력 수정에서 바꿀 수 있어요" |
+| `chat.alreadyExceeded` | 초과 EXPLAIN, `/internal/calc` `409 ALREADY_EXCEEDED`(C3-2)와 같은 문장 | "이미 가진 자산이 목표 금액을 넘었어요. 대화로 목표 금액을 더 높게 바꿔 볼 수 있어요." |
 | `excluded.<CODE>` | `ExcludedItem` 5개. `excluded.EXCHANGE_RATE` = "환율 변동은 반영하지 않았어요"(D-027) | 나머지 4개는 #18 |
 | `scenarioMethod.<CODE>` | `CAGR`, `ROLLING_DISTRIBUTION` | TBD-01 결과에 따름. **결정 전에도 임시 문장을 넣는다**(빈 값 금지) |
 
@@ -410,7 +410,7 @@ public record PlanContextView(long calcRunId, ConditionsView conditions, CalcRes
 | D-7 | `backend/.../plan/` | 공개 조회 API 없음 | 현재 계획 조회(기준 시나리오 문자열 포함) + `findVersion`(소유권 포함) | G-12 |
 | D-8 | `b-team-contracts.md` C-1a, Issue #11 본문 | `assumptions` 최상위, 부호 없는 `gapToGoal`, `calcRunId`·`heldAssets` 없음 | 이 문서 | G-16 |
 | D-9 | `agent.py` `run()` EXPLAIN 검사 | `calc_run_id is None`만 | C1a-8 검사 2~4 추가 | G-2 |
-| D-10 | `prompts.py` `SYSTEM_PROMPT` | 조건 7개 안내 | 대화로 바꿀 수 있는 조건 4개(D-040) | **[v3] #21 기존 범위**(G-3에서 뺌) |
+| D-10 | `prompts.py` `SYSTEM_PROMPT` | 조건 7개 안내 | 대화로 바꿀 수 있는 조건 **5개**(D-090·D-092) | #21 |
 | D-11 | `backend/.claude/rules/modulith.md` 이벤트 절 | 수신은 `@ApplicationModuleListener`(새 트랜잭션)만 | 외부 HTTP 리스너는 트랜잭션 없이 예외 1줄 | **[v3]** G-9a(#41) |
 
 ## C1a-15. Issue #11 수용 기준 대응 [합의]

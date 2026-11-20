@@ -694,8 +694,8 @@ public record PlanApplyResult(long planVersionId, Long previousVersionId, long r
 ## C12b-14. ai-server에 미치는 영향 [합의]
 
 - **새 필드·새 엔드포인트 없음.** F-1·F-3은 지금의 `ChatRequest`·`ChatResponse`를 쓴다.
-- **키 표기**: ai-server `ConditionChanges.changed()`는 snake_case 키를 내고 `ChatResponse.condition_changes`로 그대로 온다. **chat 리스너(#41)가 저장할 때 camelCase로 바꿔 저장**하고(4키 고정 맵), 그 뒤 F-4 재계산·F-5 적용은 변환 없이 쓴다. 허용 4키 밖의 키는 **그대로 저장**한다(조용히 버리지 않음). 그런 메시지는 F-4가 500, F-5가 `FIELD_NOT_CHANGEABLE`이다. #44 수용 기준의 "snake_case로 저장된 RECALC_RESULT → camelCase로 바꿔 넘긴다"는 "저장은 camelCase(#41), #44는 변환 없음"으로 고친다. 운영 데이터가 없으므로 이전 형식 호환은 필요 없다.
-- **`ConditionChanges`가 지금 7키**라 D-040의 4키와 다르다. **#21(4키로 축소)을 #44·#45 선행**으로 둔다. F-2가 `conditionChanges`를 내보내지 않으므로 프론트에는 새지 않는다.
+- **키 표기 및 저장 실패 처리(D-090, CF12-10-1)**: chat 저장 코드는 아직 없으며 **#44·#45·#128(OPEN, B팀)** 이 쓴다. 변환 맵은 처음부터 **5키**(`goal_amount → goalAmount` 포함)로 두고, camelCase 변환 시 **맵에 없는 키가 하나라도 있으면 그 키만 버리지 않고 변환 실패로 간주해 해당 ASSISTANT 메시지를 `FAILED`로 남긴다(`RECALC_RESULT`로 저장 금지, 부분 저장 금지, 기존 `chat.failed` 재사용, 턴 전체 500 아님)**. F-4 재계산·F-5 적용은 저장된 camelCase를 변환 없이 쓴다.
+- **`ConditionChanges`**: #21에서 4키로 축소됐으나 **CF12(D-090·D-092)로 5키(`goal_amount` 추가)로 재확장**한다. F-2가 `conditionChanges`를 내보내지 않으므로 프론트에는 새지 않는다.
 - F-1에서 계획이 없으면 Spring이 `baselineScenario: "AVG"`를 채운다(C12b-4). `history[].role`은 Spring이 소문자로 바꾼다.
 - 위험 메모(제공자): Spring은 ai-server가 보고한 `conditionChanges`가 실제 `/internal/calc`에 보낸 값과 같은지 검증하지 못한다(`calc_run`에 변경값 미저장, ADR-002). 다르면 F-4 카드가 AI 문장과 어긋난다(카드와 적용은 서로 일치하므로 계획 데이터는 안전). **ai-server 테스트(#23)에서 "보고값 = 보낸 값"을 고정**한다.
 

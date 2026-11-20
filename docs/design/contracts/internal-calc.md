@@ -143,7 +143,7 @@
 | 필드 | 타입 | 뜻 |
 |---|---|---|
 | `baselineScenario` | string | 기준 차이를 볼 시나리오(**포인터만**). **항상 `byScenario`에 있는 시나리오다.** `changed.findBaselineResult()`로 고른 시나리오가 `byScenario`에 없으면 `AVG`(ETF 0%면 `AVG`) |
-| `byScenario[]` | array | **양쪽에 모두 있는 시나리오만**, GOOD·AVG·BAD 순서 |
+| `byScenario[]` | array | **양쪽에 모두 있는 시나리오만**, GOOD·AVG·BAD 순서. 한쪽이 `ALREADY_EXCEEDED`면 `[]` |
 | `byScenario[].scenario` | string | |
 | `byScenario[].afterTaxAssetDelta` | integer(KRW, 부호 있음) | `changed.afterTaxAsset − current.afterTaxAsset` |
 | `byScenario[].principalDelta` | integer(KRW, 부호 있음) | `changed.principal − current.principal`. "더 넣은 돈" |
@@ -151,7 +151,7 @@
 | `byScenario[].achievementChange` | `STAYS_ACHIEVED` / `STAYS_MISSED` / `MISS_TO_ACHIEVE` / `ACHIEVE_TO_MISS` | `isAchieved` 전후 |
 
 - 포인터 규칙을 적은 이유: `CalcResult.findBaselineResult()`는 기준 시나리오가 없으면 다른 시나리오로 폴백하므로, 그대로 쓰면 `byScenario`에 없는 이름이 나올 수 있다. #32 테스트로 "포인터는 항상 `byScenario`에 있음"을 고정한다.
-- `gapToGoalDelta`는 두지 않는다. 대화로 목표 금액을 바꿀 수 없어(D-040) 항상 `afterTaxAssetDelta`와 같다.
+- `comparable` 플래그와 `gapToGoalDelta`는 두지 않는다. 목표가 바뀔 때도 각 시나리오의 `gapToGoal`은 각자 자기 목표 기준이다.
 - 기간을 바꾸면 서로 다른 달의 자산을 비교한다. 이 값이 맞다(사용자는 "기한을 늘리면 그때 얼마"를 묻는다). 기간은 `display`의 `conditions.*.targetPeriodMonths`·`*.targetMonth`로 말한다.
 - **달성 시점의 차이(몇 개월 빨라짐)는 계약에 두지 않는다.** 모델은 `display`의 `current.<S>.goalReachMonth`·`changed.<S>.goalReachMonth`를 각각 인용할 수는 있지만 두 달 사이의 개월 수를 말하지 않는다(프롬프트 규칙). 왜: 한쪽이 `null`인 경우가 많아 뜻이 애매하고, 필요해지면 다음 버전에 필드로 더한다.
 - 시나리오 수가 다르면(비중 100 ↔ 그 밖) `byScenario`에는 AVG만 남는다. ai-server는 `changed.scenarios`와 그 `display`로 새 3구간을 설명한다.
