@@ -1,2691 +1,2692 @@
 [
- {
-  "id": "T-001",
-  "title": "[calc] 계산 명세 확정 + 손계산 골든 케이스",
-  "team": "A",
-  "area": [
-   "docs",
-   "backend"
-  ],
-  "priority": "must",
-  "week": 1,
-  "status": "ready",
-  "depends_on": [],
-  "requirements": [
-   "CP-01",
-   "CP-03",
-   "CP-04",
-   "TBD-01",
-   "TBD-04",
-   "TBD-05",
-   "TBD-16",
-   "D-006",
-   "D-032"
-  ],
-  "paths": [
-   "docs/calc-spec.md",
-   "backend/src/test/resources/golden/**"
-  ],
-  "summary": "계산 엔진의 전제(TBD-01 3구간 CAGR 적용 방식, TBD-04·05 월초/월말 납입과 매수 시점, TBD-16 달성 판정에 쓸 값)를 한 문서로 확정하고, 손으로 계산한 골든 케이스를 5개 이상 만든다. 계산 엔진 구현의 선행 작업이며 1주차 안에 끝나야 한다.",
-  "acceptance": [
-   "Given 적금만(ETF 0%)인 계획 When 손계산하면 Then 월별 납입·단리 이자·세후 예상 자산이 골든 케이스 파일에 원 단위로 적혀 있다",
-   "Given ETF가 포함된 계획 When 손계산하면 Then 좋았던 때·평균·나빴던 때 3개 값이 TBD-01에서 정한 방식으로 적혀 있다",
-   "Given 보유 자산 >= 목표 금액인 계획 When 명세를 보면 Then 계산 대신 초과 안내(ALREADY_EXCEEDED)로 가는 경계(같으면 초과)가 적혀 있다",
-   "Given 목표 대비 차이가 0원인 계획 When 판정하면 Then 달성으로 본다(CP-01)"
-  ],
-  "done_when": [
-   "docs/calc-spec.md가 A팀 두 명 이상 검토를 받고 팀에 공유됨",
-   "골든 케이스가 JSON/CSV로 backend/src/test/resources/golden에 들어가 있음(계산 코드 없이도 읽을 수 있음)"
-  ],
-  "refs": [
-   "project-workspace docs/srs.md#CP-03",
-   "docs/scope-review.md §4",
-   "docs/design/alignment.md 2-7"
-  ],
-  "issue": 9
- },
- {
-  "id": "T-002",
-  "title": "[contract] /internal/calc 응답·검증 오류 형식 확정(C-2, C-3)",
-  "team": "common",
-  "area": [
-   "docs",
-   "backend",
-   "ai-server"
-  ],
-  "priority": "must",
-  "week": 1,
-  "status": "ready",
-  "depends_on": [],
-  "requirements": [
-   "NFR-INT-03",
-   "FR-AI-06",
-   "FR-AI-07",
-   "CP-02",
-   "D-033",
-   "D-040",
-   "D-041"
-  ],
-  "paths": [
-   "docs/api/internal-calc.md",
-   "ai-server/README.md"
-  ],
-  "summary": "Spring 계산 엔진과 ai-server 사이 계약을 먼저 고정한다. /internal/calc 응답(current, changed, diff, display)과 ProblemDetail 기반 오류 형식·코드 표(VALIDATION_FAILED, FIELD_NOT_CHANGEABLE, NO_PLAN, ALREADY_EXCEEDED 등)를 A·B팀이 합의해 한 문서로 둔다. B팀이 목으로 개발을 시작하는 기준이다.",
-  "acceptance": [
-   "Given 월 저축액이 허용 상한을 넘는 요청 When 오류 형식 예시를 보면 Then HTTP 422, code=VALIDATION_FAILED, errors[].field/reason/min/max/unit이 예시 JSON으로 있다",
-   "Given 대화로 바꿀 수 없는 조건(목표 금액) When 계약을 보면 Then FIELD_NOT_CHANGEABLE 코드와 ai-server 동작(입력 수정 안내)이 적혀 있다",
-   "Given 이전 대화의 변경이 있는 상태 When 계약을 보면 Then 기준은 항상 현재 계획이고 변경은 누적하지 않는다(D-041)고 적혀 있다"
-  ],
-  "done_when": [
-   "docs/api/internal-calc.md와 ai-server/README.md 'Spring과의 계약'이 같은 내용으로 갱신됨",
-   "A팀 계산 담당과 B팀 담당이 PR에서 승인함"
-  ],
-  "refs": [
-   "docs/design/b-team-contracts.md C-2, C-3, §5 순서 1·2",
-   "docs/design/alignment.md 2-3"
-  ],
-  "issue": 10
- },
- {
-  "id": "T-003",
-  "title": "[contract] planContext 필드 목록과 display 문자열 규칙(C-1a)",
-  "team": "common",
-  "area": [
-   "docs"
-  ],
-  "priority": "must",
-  "week": 1,
-  "status": "ready",
-  "depends_on": [
-   "T-002"
-  ],
-  "requirements": [
-   "FR-AI-02",
-   "NFR-INT-01",
-   "D-030",
-   "CP-04"
-  ],
-  "paths": [
-   "docs/api/plan-context.md",
-   "ai-server/README.md"
-  ],
-  "summary": "LLM에 들어가는 planContext(조건, 결과, display, assumptions)의 필드를 고정한다. 금액 표시 문자열(약 N만원)은 Spring Formatter가 만들고 LLM은 그대로 인용한다. memberId, 로그인 아이디, 월별 시계열은 넣지 않는다.",
-  "acceptance": [
-   "Given planContext 예시 When 필드를 보면 Then memberId와 계정 식별 정보가 없다(D-030)",
-   "Given 세후 예상 자산 값 When display를 보면 Then 'AVG.afterTaxAsset' 같은 키로 Spring이 만든 문자열이 있고 LLM이 반올림하지 않는다",
-   "Given 규칙 밖 필드 When ai-server가 받으면 Then 무시한다고 적혀 있다"
-  ],
-  "done_when": [
-   "docs/api/plan-context.md가 A·B팀 승인",
-   "예시 JSON이 ai-server 테스트 fixture로 쓸 수 있는 형태로 첨부됨"
-  ],
-  "refs": [
-   "docs/design/b-team-contracts.md C-1a, §5 순서 3"
-  ],
-  "issue": 11
- },
- {
-  "id": "T-004",
-  "title": "[contract] 프론트-Spring API 계약(로그인·입력·결과·대화·적용) + 목 JSON",
-  "team": "common",
-  "area": [
-   "docs",
-   "frontend"
-  ],
-  "priority": "must",
-  "week": 1,
-  "status": "ready",
-  "depends_on": [
-   "T-002"
-  ],
-  "requirements": [
-   "FR-AI-01",
-   "FR-AI-07",
-   "FR-PLAN-03",
-   "FR-PLAN-04",
-   "FR-AUTH-01",
-   "FR-AUTH-03",
-   "FR-INP-10",
-   "FR-INP-11",
-   "D-046"
-  ],
-  "paths": [
-   "docs/api/frontend-api.md",
-   "frontend/src/mocks/**"
-  ],
-  "summary": "프론트가 부를 REST를 OpenAPI 초안으로 고정하고 고정 JSON 목을 만든다. 로그인·로그아웃, 계획 저장·조회, F-1~F-4(대화), 적용·되돌리기(A-1, A-2)를 포함한다. 함께 정할 것: Spring 모듈 담당(chat=B팀), 적용 API 위치(plan이 chat을 의존하면 순환이므로 plan은 조건값을 받는 서비스만, chatMessageId 적용은 chat 쪽 컨트롤러), 되돌리기 방식(포인터 교체 vs 새 버전), 폴링 간격과 ai 호출 시간 초과 임시값.",
-  "acceptance": [
-   "Given 계약 문서 When 각 엔드포인트를 보면 Then 요청, 응답, 오류 코드(PLAN_CHANGED, STALE_COMPARISON, NOTHING_TO_UNDO, ANSWER_PENDING 등) 예시가 있다",
-   "Given chatMessageId로 적용하는 요청 When 모듈 경계를 보면 Then plan -> chat 의존이 생기지 않는 호출 방향이 적혀 있다",
-   "Given 목 JSON When 프론트가 fetch 래퍼로 부르면 Then 정상, 422, 401, 409 응답을 모두 받을 수 있다"
-  ],
-  "done_when": [
-   "docs/api/frontend-api.md가 A·B팀과 프론트 담당 승인",
-   "frontend/src/mocks에 응답별 JSON이 있음",
-   "backend 의존 방향이 ModularityTests를 깨지 않는 설계임을 문서에 적음"
-  ],
-  "refs": [
-   "docs/design/b-team-contracts.md §3, §4, §5 순서 4~6",
-   "docs/design/alignment.md 2-4"
-  ],
-  "issue": 12
- },
- {
-  "id": "T-005",
-  "title": "[front] 프론트 프로젝트 초기 설정",
-  "team": "common",
-  "area": [
-   "frontend"
-  ],
-  "priority": "must",
-  "week": 1,
-  "status": "ready",
-  "depends_on": [],
-  "requirements": [
-   "NFR-CMP-01",
-   "NFR-UI-01",
-   "D-047"
-  ],
-  "paths": [
-   "frontend/package.json",
-   "frontend/index.html",
-   "frontend/src/app/**",
-   "frontend/src/api/**",
-   "frontend/src/styles/**"
-  ],
-  "summary": "frontend/에 프로젝트를 만든다(프레임워크는 팀이 정함, 권장은 Vite + React + TypeScript). 라우팅, 공통 레이아웃(헤더), fetch 래퍼(쿠키 인증, ProblemDetail 파싱, 401이면 로그인으로), 목 모드 전환, 린트·빌드를 갖춘다. 화면 작업이 이 위에서 병렬로 진행되므로 1주차에 끝낸다.",
-  "acceptance": [
-   "Given 새로 clone한 사용자 When 설치 후 개발 서버를 실행하면 Then 빈 레이아웃(헤더 포함)이 뜬다",
-   "Given 목 모드 When API를 부르면 Then frontend/src/mocks의 JSON을 돌려준다",
-   "Given 서버가 401을 돌려줄 때 When fetch 래퍼가 받으면 Then 로그인 경로로 이동한다"
-  ],
-  "done_when": [
-   "프론트 빌드·린트·테스트 명령이 README에 적혀 있고 통과",
-   "frontend/.gitkeep 대신 실제 프로젝트가 올라감"
-  ],
-  "refs": [
-   "docs/srs.md#NFR-UI-01",
-   "docs/design/b-team-contracts.md §3 오류 공통"
-  ],
-  "issue": 13
- },
- {
-  "id": "T-006",
-  "title": "[refdata] refdata 모듈 코드(버전 조회, 파라미터 적재 검증)",
-  "team": "A",
-  "area": [
-   "backend"
-  ],
-  "priority": "must",
-  "week": 1,
-  "status": "ready",
-  "depends_on": [],
-  "requirements": [
-   "NFR-INT-02",
-   "FR-DATA-01",
-   "FR-DATA-02",
-   "CP-03"
-  ],
-  "paths": [
-   "backend/src/main/java/com/moeun/backend/refdata/**",
-   "backend/src/test/java/com/moeun/backend/refdata/**"
-  ],
-  "summary": "기준 데이터 모듈을 만든다. data_version 활성 버전 조회, DataVersionService.requireKind, calc_param을 읽는 CalcParamLoader와 필수 키 검증(validateRequiredKeys)을 구현한다. 테이블과 스키마는 이미 schema.sql에 있다.",
-  "acceptance": [
-   "Given 활성 데이터 버전이 있을 때 When 활성 버전을 조회하면 Then 적금·지수·파라미터 버전 3개가 반환된다",
-   "Given 필수 calc_param 키가 빠진 버전 When 활성화를 시도하면 Then validateRequiredKeys가 실패하고 활성화되지 않는다",
-   "Given 종류가 다른 버전 ID When requireKind를 호출하면 Then 예외가 난다"
-  ],
-  "done_when": [
-   "./gradlew test --tests ModularityTests 통과",
-   "./gradlew test 통과(Testcontainers)",
-   "./gradlew checkstyleMain checkstyleTest 통과"
-  ],
-  "refs": [
-   "backend/CLAUDE.md 모듈 표",
-   "db/moved-to-code.md §1",
-   "docs/srs.md#FR-DATA-01"
-  ],
-  "issue": 14
- },
- {
-  "id": "T-007",
-  "title": "[refdata] 시드 데이터: S&P500 월별 달러 지수, 적금 12개월 평균금리, calc_param",
-  "team": "A",
-  "area": [
-   "backend",
-   "db"
-  ],
-  "priority": "must",
-  "week": 1,
-  "status": "ready",
-  "depends_on": [
-   "T-006",
-   "T-001"
-  ],
-  "requirements": [
-   "FR-DATA-01",
-   "FR-DATA-02",
-   "D-012",
-   "D-027",
-   "D-034",
-   "TBD-08"
-  ],
-  "paths": [
-   "backend/src/main/resources/seed/**",
-   "backend/src/main/java/com/moeun/backend/refdata/**"
-  ],
-  "summary": "수집 코드 없이 CSV 시드로 데이터를 넣는다. S&P500 월별 달러 지수(최소 10년), 12개월 정기적금 은행별 단순평균 금리, 세율·총보수·기본 비중 같은 calc_param을 하나의 활성 버전으로 적재한다. 자료 이용 가능 여부(TBD-08)가 불확실하면 수동 입력 CSV로 하고 출처를 파일에 적는다.",
-  "acceptance": [
-   "Given 앱을 처음 기동할 때 When 시드를 적재하면 Then 활성 data_version 1세트가 생기고 sp500 최소 120개월이 있다",
-   "Given 시드 CSV에 필수 파라미터 키가 빠졌을 때 When 적재하면 Then 적재가 실패한다",
-   "Given 환율 미반영 데이터 When 가정 보기용 값을 읽으면 Then 달러 지수 기준일이 함께 조회된다(D-027)"
-  ],
-  "done_when": [
-   "./gradlew test 통과",
-   "시드 CSV의 출처와 기준일이 seed/README에 적혀 있음"
-  ],
-  "refs": [
-   "docs/srs.md#FR-DATA-02",
-   "docs/scope-review.md FR-DATA 행(CSV 시드)"
-  ],
-  "issue": 15
- },
- {
-  "id": "T-008",
-  "title": "[auth] 로그인과 JWT 발급·검증, 데모 계정",
-  "team": "A",
-  "area": [
-   "backend"
-  ],
-  "priority": "must",
-  "week": 1,
-  "status": "ready",
-  "depends_on": [],
-  "requirements": [
-   "FR-AUTH-01",
-   "FR-AUTH-02",
-   "NFR-SEC-01",
-   "NFR-SEC-02"
-  ],
-  "paths": [
-   "backend/src/main/java/com/moeun/backend/auth/**",
-   "backend/src/main/java/com/moeun/backend/config/security/**",
-   "backend/src/test/java/com/moeun/backend/auth/**"
-  ],
-  "summary": "member 테이블 기반 데모 계정 로그인(회원가입 없음)과 JWT(HttpOnly·Secure·SameSite 쿠키, 만료 30분) 발급·검증, 비밀번호 해시 저장, 미인증 요청 차단(401 ProblemDetail)을 구현한다. memberId는 JWT subject에서만 얻는다.",
-  "acceptance": [
-   "Given 데모 계정 When 올바른 아이디·비밀번호로 로그인하면 Then 200과 쿠키가 발급된다",
-   "Given 틀린 비밀번호 When 로그인하면 Then 401이고 쿠키가 발급되지 않는다",
-   "Given 만료되었거나 없는 토큰 When 보호된 API를 부르면 Then 401 UNAUTHENTICATED이고 요청은 처리되지 않는다",
-   "Given DB의 member 행 When 비밀번호 컬럼을 보면 Then 평문이 아니라 해시다"
-  ],
-  "done_when": [
-   "./gradlew test 통과",
-   "./gradlew test --tests ModularityTests 통과",
-   "./gradlew checkstyleMain checkstyleTest 통과"
-  ],
-  "refs": [
-   "db/decision.md ADR-002 §2-5",
-   "docs/srs.md#FR-AUTH-02"
-  ],
-  "issue": 16
- },
- {
-  "id": "T-009",
-  "title": "[plan] ConditionValidator와 rules.yml(입력 범위, 경로별 허용 조건)",
-  "team": "A",
-  "area": [
-   "backend"
-  ],
-  "priority": "must",
-  "week": 1,
-  "status": "ready",
-  "depends_on": [
-   "T-002"
-  ],
-  "requirements": [
-   "CP-02",
-   "CP-07",
-   "FR-INP-09",
-   "FR-INP-04",
-   "FR-INP-06",
-   "D-033",
-   "D-040",
-   "D-045"
-  ],
-  "paths": [
-   "backend/src/main/java/com/moeun/backend/plan/**",
-   "backend/src/main/resources/config/rules.yml",
-   "backend/src/test/java/com/moeun/backend/plan/**"
-  ],
-  "summary": "모든 경로(입력·대안·비교·대화)가 같은 ConditionValidator.validate(path, values)를 거치게 한다. 범위 수치(TBD-09·10)는 rules.yml 임시값으로 두고, CHAT 경로 허용 필드는 월 저축액·비중·적금 금리·기한 4개로 한다(M-2 서버 쪽). 해커톤에서는 목표 기간·월 저축액을 required로 막는다(M-8 일부). 오류는 T-002 형식(ProblemDetail)으로 낸다.",
-  "acceptance": [
-   "Given 월 저축액이 rules.yml 상한을 넘는 값 When 검증하면 Then VALIDATION_FAILED, reason=OUT_OF_RANGE, min/max/unit이 담긴다",
-   "Given 목표 기간이 비어 있는 INPUT_EDIT 요청 When 검증하면 Then reason=REQUIRED로 막힌다(D-045)",
-   "Given CHAT 경로에서 목표 금액을 바꾸는 요청 When 검증하면 Then FIELD_NOT_CHANGEABLE이다(D-040)",
-   "Given 한 번에 바꿀 수 있는 개수를 넘은 요청 When 검증하면 Then 거절된다(CP-07)"
-  ],
-  "done_when": [
-   "./gradlew test 통과",
-   "./gradlew test --tests ModularityTests 통과",
-   "범위 수치가 TBD-09·10 확정 전 임시값임이 rules.yml 주석에 적혀 있음"
-  ],
-  "refs": [
-   "db/moved-to-code.md §1",
-   "docs/design/b-team-contracts.md C-3",
-   "docs/design/alignment.md M-2, M-8"
-  ],
-  "issue": 17
- },
- {
-  "id": "T-010",
-  "title": "[docs] 문구표 copy.ko.yml 초기 키와 Spring·ai-server 로더",
-  "team": "common",
-  "area": [
-   "backend",
-   "ai-server",
-   "docs"
-  ],
-  "priority": "must",
-  "week": 1,
-  "status": "ready",
-  "depends_on": [],
-  "requirements": [
-   "CP-05",
-   "CP-06",
-   "D-027",
-   "D-028",
-   "D-029",
-   "FR-RES-07",
-   "NFR-USA-02"
-  ],
-  "paths": [
-   "copy/copy.ko.yml",
-   "backend/src/main/java/com/moeun/backend/config/copy/**",
-   "ai-server/app/core/copy.py",
-   "ai-server/tests/test_copy.py"
-  ],
-  "summary": "고정 문구를 문구표 파일 하나에 두고 두 서버가 읽는 로더를 만든다. 초기 키: 면책(격식체), 과거 수익률 고지 한 줄(D-029), '환율 변동은 반영하지 않았어요'(D-027), 입력 검증 문구, AI 실패 안내, 범위 밖 안내, 목표 초과 안내. 문체는 해요체이고 '추천' 표현은 쓰지 않는다.",
-  "acceptance": [
-   "Given copy.ko.yml When Spring과 ai-server가 같은 키를 읽으면 Then 같은 문구가 나온다",
-   "Given 없는 키 When 읽으면 Then 기동 시 또는 테스트에서 실패한다(조용히 빈 문구가 되지 않음)",
-   "Given 문구표 When '추천' 단어를 검색하면 Then 부정문 외에는 없다(CF-07)"
-  ],
-  "done_when": [
-   "./gradlew test 통과",
-   "uv run pytest 통과",
-   "uv run ruff check . 와 uv run mypy 통과"
-  ],
-  "refs": [
-   "db/moved-to-code.md §4 CP-05",
-   "docs/srs.md#CP-05"
-  ],
-  "issue": 18
- },
- {
-  "id": "T-011",
-  "title": "[plan] 계획 저장 서비스(plan_version INSERT, 시작월, revision, PlanChanged)",
-  "team": "A",
-  "area": [
-   "backend"
-  ],
-  "priority": "must",
-  "week": 1,
-  "status": "ready",
-  "depends_on": [
-   "T-009"
-  ],
-  "requirements": [
-   "FR-INP-10",
-   "FR-PLAN-05",
-   "D-013",
-   "D-032",
-   "D-045"
-  ],
-  "paths": [
-   "backend/src/main/java/com/moeun/backend/plan/**",
-   "backend/src/test/java/com/moeun/backend/plan/**"
-  ],
-  "summary": "입력값을 plan_version으로 INSERT하고 plan.current_version_id·revision을 갱신하는 서비스와 PlanChanged 이벤트를 만든다. 최초 저장의 시작월은 요청일이 속한 달(D-032)이고, 이미 시작월이 있으면 입력 수정에서도 그대로 쓴다(D-013). 다른 모듈이 쓸 공개 조회 서비스(현재 계획 조회)도 둔다.",
-  "acceptance": [
-   "Given 계획이 없는 회원이 3월 31일에 저장 When 저장하면 Then calc_start_month가 3월이다",
-   "Given 3월 시작월 계획을 5월에 입력 수정 When 저장하면 Then 새 plan_version의 시작월이 3월 그대로다",
-   "Given revision이 맞지 않는 요청 When 저장하면 Then 0행 갱신이고 현재 상태를 돌려준다(PLAN_CHANGED)",
-   "Given 다른 회원의 plan_version ID When 조회하면 Then 찾을 수 없다(memberId 조건)"
-  ],
-  "done_when": [
-   "./gradlew test 통과",
-   "./gradlew test --tests ModularityTests 통과",
-   "./gradlew checkstyleMain checkstyleTest 통과"
-  ],
-  "refs": [
-   "db/tables.md §2·§3",
-   "docs/srs.md#FR-PLAN-05 수용 기준",
-   "backend/.claude/rules/modulith.md 이벤트 표"
-  ],
-  "issue": 19
- },
- {
-  "id": "T-012",
-  "title": "[docs] M-7 db/tables.md calc_run.created_at 설명 정정",
-  "team": "common",
-  "area": [
-   "docs",
-   "db"
-  ],
-  "priority": "must",
-  "week": 1,
-  "status": "ready",
-  "depends_on": [],
-  "requirements": [
-   "D-010",
-   "M-7"
-  ],
-  "paths": [
-   "db/tables.md"
-  ],
-  "summary": "db/tables.md §4의 calc_run.created_at 설명에서 '재로그인 시 최신 데이터로 재계산할지 판단' 문구를 지운다. D-010으로 재로그인 시 재계산하지 않기 때문이다.",
-  "acceptance": [
-   "Given db/tables.md When calc_run.created_at 설명을 보면 Then 최신 데이터 재계산 언급이 없고 같은 버전의 최신 기록을 고르는 용도만 남아 있다"
-  ],
-  "done_when": [
-   "PR 리뷰 승인",
-   "문서 외 변경 없음"
-  ],
-  "refs": [
-   "docs/design/alignment.md 2-5, M-7"
-  ],
-  "issue": 20
- },
- {
-  "id": "T-013",
-  "title": "[ai] 대화 조건 4개로 축소(도구 스키마·프롬프트·범위 밖 안내) — M-2",
-  "team": "B",
-  "area": [
-   "ai-server"
-  ],
-  "priority": "must",
-  "week": 1,
-  "status": "ready",
-  "depends_on": [],
-  "requirements": [
-   "FR-AI-06",
-   "FR-AI-09",
-   "CP-07",
-   "D-040",
-   "M-2"
-  ],
-  "paths": [
-   "ai-server/app/llm/agent.py",
-   "ai-server/app/llm/prompts.py",
-   "ai-server/app/schemas.py",
-   "ai-server/tests/test_agent_tools.py"
-  ],
-  "summary": "ai-server의 recalculate 도구 스키마, 시스템 프롬프트, 범위 안내 문구를 월 저축액·비중·적금 금리·기한 4개 조건으로 줄인다(현재 7개). 목표 금액·보유 자산·기존 납입액은 대화로 바꾸지 않고 입력 수정으로 안내한다. 서버(Spring)가 최종으로 거부하므로 ai-server는 형식 검사만 한다.",
-  "acceptance": [
-   "Given 도구 스키마 When 필드를 보면 Then monthlySavingAmount, savingsRatioPct, savingsRateInputPct, targetPeriodMonths 4개뿐이다",
-   "Given '목표 금액을 1억으로' 발화 When 처리하면 Then 계산 도구를 부르지 않고 입력 수정에서 바꾼다고 안내한다",
-   "Given 모호한 발화 When 처리하면 Then 값을 되묻고 비교 결과를 만들지 않는다"
-  ],
-  "done_when": [
-   "uv run pytest 통과",
-   "uv run ruff check . 통과",
-   "uv run mypy 통과"
-  ],
-  "refs": [
-   "docs/design/alignment.md 2-3, M-2",
-   "docs/srs.md#FR-AI-06 수용 기준"
-  ],
-  "issue": 21
- },
- {
-  "id": "T-014",
-  "title": "[ai] 누적 금지 프롬프트와 시나리오 테스트 — M-3",
-  "team": "B",
-  "area": [
-   "ai-server"
-  ],
-  "priority": "must",
-  "week": 1,
-  "status": "ready",
-  "depends_on": [
-   "T-013"
-  ],
-  "requirements": [
-   "FR-AI-06",
-   "FR-AI-07",
-   "D-041",
-   "M-3"
-  ],
-  "paths": [
-   "ai-server/app/llm/prompts.py",
-   "ai-server/app/llm/agent.py",
-   "ai-server/tests/test_no_accumulate.py"
-  ],
-  "summary": "history 20개를 LLM에 넘겨도 이번 발화에서 말한 조건만 도구 인자에 넣도록 프롬프트를 고치고, fake 모델 테스트로 '월 50만원 -> 기간도 5년' 시나리오를 고정한다. 비교의 기준은 항상 내 계획이다(D-041).",
-  "acceptance": [
-   "Given 이전 턴에 월 50만원을 비교한 기록 When 사용자가 '기간도 5년으로'라고 말하면 Then 도구 인자에는 targetPeriodMonths만 있고 monthlySavingAmount는 없다",
-   "Given fake 모델이 이전 값을 다시 넣으려 할 때 When assemble이 검사하면 Then 이번 발화에 없는 조건은 제거된다"
-  ],
-  "done_when": [
-   "uv run pytest 통과",
-   "uv run ruff check . 와 uv run mypy 통과"
-  ],
-  "refs": [
-   "docs/srs.md#FR-AI-06 수용 기준(D-041)",
-   "docs/design/alignment.md M-3"
-  ],
-  "issue": 22
- },
- {
-  "id": "T-015",
-  "title": "[ai] 계산 응답(current/changed/diff)·검증 오류 소비와 되묻기",
-  "team": "B",
-  "area": [
-   "ai-server"
-  ],
-  "priority": "must",
-  "week": 1,
-  "status": "ready",
-  "depends_on": [
-   "T-002"
-  ],
-  "requirements": [
-   "FR-AI-06",
-   "FR-AI-02",
-   "NFR-INT-03",
-   "CP-02",
-   "D-033"
-  ],
-  "paths": [
-   "ai-server/app/tools/calc.py",
-   "ai-server/app/schemas.py",
-   "ai-server/tests/test_calc_client.py",
-   "ai-server/tests/fakes/**"
-  ],
-  "summary": "CalcClient가 T-002 형식의 응답(diff, display 포함)과 ProblemDetail 오류를 구조화해 받게 하고, 422 VALIDATION_FAILED이면 min·max·unit을 인용해 되묻는다(CLARIFY). fake Calculator로 Spring 없이 테스트한다. ai-server는 범위 수치를 하드코딩하지 않는다.",
-  "acceptance": [
-   "Given Spring이 422 VALIDATION_FAILED(max=10000000)를 돌려줄 때 When 처리하면 Then 최대값을 안내하며 되묻고 messageType=CLARIFY, calcRunId는 null이다",
-   "Given 계산 응답에 diff와 display가 있을 때 When 답변을 만들면 Then 차이 금액은 display 문자열을 그대로 인용한다(AI가 빼기를 하지 않음)",
-   "Given 5xx CALC_FAILED When 처리하면 Then error 코드로 실패 응답을 돌려준다(FR-AI-04)"
-  ],
-  "done_when": [
-   "uv run pytest 통과",
-   "uv run ruff check . 와 uv run mypy 통과"
-  ],
-  "refs": [
-   "docs/design/b-team-contracts.md C-2, C-3",
-   "ai-server/.claude/rules/langchain.md 테스트 규칙"
-  ],
-  "issue": 23
- },
- {
-  "id": "T-016",
-  "title": "[rag] RAG 근거 자료 2건 선정과 이용 허락 확인(TBD-08)",
-  "team": "B",
-  "area": [
-   "docs",
-   "ai-server"
-  ],
-  "priority": "must",
-  "week": 1,
-  "status": "ready",
-  "depends_on": [],
-  "requirements": [
-   "FR-AI-03",
-   "FR-AI-10",
-   "NFR-INT-04",
-   "TBD-08",
-   "TBD-31",
-   "D-007",
-   "D-028"
-  ],
-  "paths": [
-   "docs/rag-sources.md",
-   "ai-server/docs/rag-eval.md"
-  ],
-  "summary": "서로 다른 운용사 공시 자료 2건 이상(예: S&P500 추종 ETF 투자설명서)과 금융 교육자료를 고르고, 이용 허락 여부를 확인해 목록으로 남긴다. 불확실하면 투자설명서 PDF 2건으로 한정한다. 이 목록이 적재와 출처 표시 작업의 입력이다.",
-  "acceptance": [
-   "Given 선정 목록 When 보면 Then 운용사가 서로 다른 공시 자료가 2건 이상이고 각 건에 URL·기관·이용 허락 상태가 있다",
-   "Given 이용 허락이 불확실한 자료 When 목록을 보면 Then 적재 대상에서 제외하고 사유를 적었다"
-  ],
-  "done_when": [
-   "docs/rag-sources.md가 팀 승인",
-   "적재 CLI 인자(doc-type, org, org-type, title, url)가 자료마다 적혀 있음"
-  ],
-  "refs": [
-   "ai-server/README.md 문서 적재",
-   "docs/scope-review.md §4 TBD-08"
-  ],
-  "issue": 24
- },
- {
-  "id": "T-017",
-  "title": "[calc] 시작월 고정 ConditionResolver와 CalcInput 정정 — M-1",
-  "team": "A",
-  "area": [
-   "backend"
-  ],
-  "priority": "must",
-  "week": 2,
-  "status": "ready",
-  "depends_on": [
-   "T-006",
-   "T-011"
-  ],
-  "requirements": [
-   "D-013",
-   "D-032",
-   "FR-PLAN-05",
-   "FR-INP-10",
-   "M-1"
-  ],
-  "paths": [
-   "backend/src/main/java/com/moeun/backend/calc/CalcInput.java",
-   "backend/src/main/java/com/moeun/backend/calc/application/ConditionResolver.java",
-   "backend/src/test/java/com/moeun/backend/calc/**"
-  ],
-  "summary": "CalcInput.calcStartMonth 주석('재계산할 때는 현재 월')을 고치고, ConditionResolver가 항상 plan_version.calc_start_month를 쓰게 한다. 기본 금리 적용, 비중 규칙(5:5 기본), 변경값 반영도 함께 한다. 적용·되돌리기로 새 버전을 만들 때도 시작월을 복사한다.",
-  "acceptance": [
-   "Given 3월 시작월 계획 When 5월에 대화·비교 재계산을 하면 Then 계산 시작월은 3월이다",
-   "Given 적금 금리를 비운 계획 When 해석하면 Then D-034 기본 금리가 적용되고 isDefaultSavingsRate=true다",
-   "Given 비중을 입력하지 않은 계획 When 해석하면 Then 적금 5 : ETF 5이다(FR-INP-08은 Won't)"
-  ],
-  "done_when": [
-   "./gradlew test 통과",
-   "./gradlew test --tests ModularityTests 통과",
-   "./gradlew checkstyleMain checkstyleTest 통과"
-  ],
-  "refs": [
-   "docs/design/alignment.md 2-4, 2-7, M-1",
-   "db/moved-to-code.md §2 calc_run.applied_*"
-  ],
-  "issue": 25
- },
- {
-  "id": "T-018",
-  "title": "[calc] CalcEngine 1: 적금 단리, 세금, 보유 자산, 월별 시계열 골격",
-  "team": "A",
-  "area": [
-   "backend"
-  ],
-  "priority": "must",
-  "week": 2,
-  "status": "ready",
-  "depends_on": [
-   "T-001",
-   "T-007",
-   "T-017"
-  ],
-  "requirements": [
-   "CP-03",
-   "FR-RES-02",
-   "FR-RES-04",
-   "NFR-INT-01",
-   "TBD-04",
-   "TBD-05"
-  ],
-  "paths": [
-   "backend/src/main/java/com/moeun/backend/calc/application/CalcEngine.java",
-   "backend/src/main/java/com/moeun/backend/calc/application/Savings*.java",
-   "backend/src/test/java/com/moeun/backend/calc/**"
-  ],
-  "summary": "T-001 명세대로 적금 단리 이자, 세후 계산, 보유 자산(운용 수익 없이 원금 포함), 월별 납입 시계열을 구현한다. ETF 0%(적금만)일 때 시나리오는 AVG 하나다. 골든 케이스 테스트로 검증한다. 계산 로직을 바꾸면 engine_version을 올린다.",
-  "acceptance": [
-   "Given T-001 적금만 골든 케이스 When CalcEngine.calculate를 실행하면 Then 세후 예상 자산이 골든 값과 원 단위로 일치한다",
-   "Given ETF 0% 계획 When 계산하면 Then scenarios에는 AVG 하나만 있다",
-   "Given 같은 입력과 같은 데이터 버전 When 두 번 계산하면 Then 결과가 같다"
-  ],
-  "done_when": [
-   "./gradlew test 통과(골든 케이스 포함)",
-   "./gradlew checkstyleMain checkstyleTest 통과"
-  ],
-  "refs": [
-   "db/moved-to-code.md §1",
-   "docs/srs.md#CP-03",
-   "backend/.claude/rules/persistence.md"
-  ],
-  "issue": 26
- },
- {
-  "id": "T-019",
-  "title": "[calc] CalcEngine 2: ETF 3구간, 목표 대비·달성 판정, 초과 안내, 미지원 분기 차단 — M-8",
-  "team": "A",
-  "area": [
-   "backend"
-  ],
-  "priority": "must",
-  "week": 2,
-  "status": "ready",
-  "depends_on": [
-   "T-018"
-  ],
-  "requirements": [
-   "FR-RES-01",
-   "FR-RES-02",
-   "FR-RES-03",
-   "FR-RES-06",
-   "CP-01",
-   "D-006",
-   "D-045",
-   "M-8"
-  ],
-  "paths": [
-   "backend/src/main/java/com/moeun/backend/calc/application/**",
-   "backend/src/test/java/com/moeun/backend/calc/**"
-  ],
-  "summary": "좋았던 때·평균·나빴던 때 3구간(T-001에서 확정한 방식), 목표 대비 차이와 달성/미달(0원은 달성), 보유 자산 >= 목표면 ALREADY_EXCEEDED를 구현한다. 기한 없음·월 저축액 모름 입력은 조용히 이상한 숫자를 내지 않도록 IllegalArgumentException으로 막는다(M-8). Assumptions에 환율 미반영 등 반영하지 않은 항목을 채운다.",
-  "acceptance": [
-   "Given T-001 ETF 골든 케이스 When 계산하면 Then 3구간 값이 골든 값과 일치한다",
-   "Given 목표 대비 차이가 정확히 0원 When 판정하면 Then 달성이다",
-   "Given 보유 자산이 목표 금액 이상 When 계산하면 Then CalcStatus.ALREADY_EXCEEDED이고 시나리오 계산을 하지 않는다",
-   "Given targetPeriodMonths가 null인 입력 When 엔진에 넣으면 Then IllegalArgumentException이다(해커톤 범위 밖 분기)"
-  ],
-  "done_when": [
-   "./gradlew test 통과",
-   "./gradlew checkstyleMain checkstyleTest 통과"
-  ],
-  "refs": [
-   "docs/design/alignment.md 2-6, 2-7, M-8",
-   "docs/srs.md#FR-RES-03, FR-RES-01"
-  ],
-  "issue": 27
- },
- {
-  "id": "T-020",
-  "title": "[calc] Formatter와 공유 ResultDisplayBuilder: 약 N만원, 달성/미달 라벨, n년 n개월, 적금 a : ETF b, display 맵",
-  "team": "A",
-  "area": [
-   "backend"
-  ],
-  "priority": "must",
-  "week": 2,
-  "status": "ready",
-  "depends_on": [
-   "T-001",
-   "T-010"
-  ],
-  "requirements": [
-   "CP-04",
-   "TBD-16"
-  ],
-  "paths": [
-   "backend/src/main/java/com/moeun/backend/calc/application/Formatter.java",
-   "backend/src/main/java/com/moeun/backend/calc/application/ResultDisplayBuilder.java",
-   "backend/src/test/java/com/moeun/backend/calc/FormatterTest.java",
-   "backend/src/test/java/com/moeun/backend/calc/ResultDisplayBuilderTest.java"
-  ],
-  "summary": "CP-04 표시 형식을 Spring 한 곳에서 만든다. 금액은 천 단위 반올림 후 '약 N만원', 목표 대비는 부호와 달성/미달, 기간은 'n년 n개월', 비중은 정수 백분율이다. 판정에 쓰는 값은 T-001에서 정한 기준(TBD-16)을 따르고 판정과 표시가 어긋나는 경계 테스트를 둔다.",
-  "acceptance": [
-   "Given 28,704,000원 When 포맷하면 Then 약 2,870만원이다",
-   "Given 3천 원 부족한 결과 When 판정과 표시를 보면 Then 판정은 TBD-16 기준에 따르고 표시와 모순되지 않는다(경계 테스트)",
-   "Given 38개월 When 기간을 포맷하면 Then 3년 2개월이다"
-  ],
-  "done_when": [
-   "./gradlew test 통과",
-   "./gradlew checkstyleMain checkstyleTest 통과"
-  ],
-  "refs": [
-   "docs/srs.md#CP-04",
-   "db/moved-to-code.md §4"
-  ],
-  "issue": 28
- },
- {
-  "id": "T-021",
-  "title": "[calc] calc_run 기록, PlanChanged 수신, 데이터 버전 기록, 결과 조회 서비스",
-  "team": "A",
-  "area": [
-   "backend"
-  ],
-  "priority": "must",
-  "week": 2,
-  "status": "ready",
-  "depends_on": [
-   "T-011",
-   "T-019"
-  ],
-  "requirements": [
-   "NFR-INT-02",
-   "FR-PLAN-05",
-   "FR-RES-06",
-   "D-045"
-  ],
-  "paths": [
-   "backend/src/main/java/com/moeun/backend/calc/**",
-   "backend/src/test/java/com/moeun/backend/calc/**"
-  ],
-  "summary": "plan.PlanChanged를 받아 calc_run(PLAN)을 기록하고(같은 이벤트를 두 번 받아도 결과 동일), 결과와 함께 금리·지수·파라미터 버전 3종과 engine_version을 남긴다. 현재 계획의 결과를 조회하는 공개 서비스를 만든다(기록이 늦으면 다시 계산해 기록). 결과는 저장하지 않고 calc_run의 버전으로 다시 계산한다.",
-  "acceptance": [
-   "Given PlanChanged 이벤트 When 처리하면 Then calc_run(PLAN) 1행이 기록되고 버전 3종이 채워진다",
-   "Given 같은 이벤트가 두 번 도착 When 처리하면 Then calc_run이 중복되지 않는다",
-   "Given calc_run 기록이 아직 없는 새 버전 When 결과를 조회하면 Then 다시 계산해 기록하고 결과를 돌려준다"
-  ],
-  "done_when": [
-   "./gradlew test 통과",
-   "./gradlew test --tests ModularityTests 통과",
-   "./gradlew checkstyleMain checkstyleTest 통과"
-  ],
-  "refs": [
-   "backend/.claude/rules/modulith.md 이벤트 표",
-   "db/decision.md ADR-002"
-  ],
-  "issue": 29
- },
- {
-  "id": "T-022",
-  "title": "[calc] 결과 보기 API: 검증 -> 저장 -> 계산 -> 결과 응답",
-  "team": "A",
-  "area": [
-   "backend"
-  ],
-  "priority": "must",
-  "week": 2,
-  "status": "ready",
-  "depends_on": [
-   "T-009",
-   "T-011",
-   "T-019",
-   "T-020",
-   "T-021"
-  ],
-  "requirements": [
-   "FR-INP-09",
-   "FR-INP-10",
-   "FR-INP-03",
-   "FR-INP-05",
-   "FR-INP-07",
-   "FR-RES-01",
-   "FR-RES-05",
-   "FR-RES-06",
-   "FR-RES-07"
-  ],
-  "paths": [
-   "backend/src/main/java/com/moeun/backend/plan/web/**",
-   "backend/src/main/java/com/moeun/backend/calc/web/**",
-   "backend/src/test/java/com/moeun/backend/plan/**"
-  ],
-  "summary": "프론트의 '결과 보기'가 부르는 API(T-004 계약)를 구현한다. 모든 입력을 ConditionValidator로 검증하고, 통과하면 계획을 저장하고 계산해 결과(시나리오, 월별 시계열, display, assumptions, 면책·고지 문구 키)를 돌려준다. 보유 자산이 목표 이상이면 계산 없이 초과 안내를 돌려준다.",
-  "acceptance": [
-   "Given 올바른 입력 When 결과 보기를 요청하면 Then 계획이 저장되고 결과가 응답된다",
-   "Given 범위 밖 월 저축액 When 요청하면 Then 422 VALIDATION_FAILED이고 계획은 저장되지 않는다",
-   "Given 보유 자산 >= 목표 When 요청하면 Then 초과 안내 응답이다(FR-RES-01)",
-   "Given 적금 금리를 비운 요청 When 응답을 보면 Then 기본 금리가 적용됐다는 표시와 기준월이 있다"
-  ],
-  "done_when": [
-   "./gradlew test 통과",
-   "./gradlew openapi3 이 성공하고 계약과 일치",
-   "./gradlew checkstyleMain checkstyleTest 통과"
-  ],
-  "refs": [
-   "docs/design/b-team-contracts.md §3",
-   "docs/srs.md#FR-INP-10"
-  ],
-  "issue": 30
- },
- {
-  "id": "T-023",
-  "title": "[calc] 현재 계획 조회 API: 로그인 후 진입 분기와 입력값 유지",
-  "team": "A",
-  "area": [
-   "backend"
-  ],
-  "priority": "must",
-  "week": 2,
-  "status": "ready",
-  "depends_on": [
-   "T-022",
-   "T-011",
-   "T-020",
-   "T-021"
-  ],
-  "requirements": [
-   "FR-PLAN-06",
-   "FR-INP-11",
-   "FR-PLAN-05",
-   "FR-INP-05",
-   "D-035",
-   "D-045"
-  ],
-  "paths": [
-   "backend/src/main/java/com/moeun/backend/plan/web/**",
-   "backend/src/test/java/com/moeun/backend/plan/**"
-  ],
-  "summary": "현재 계획과 결과를 조회하는 API를 만든다. 계획이 있으면 결과 화면용 데이터, 없으면 빈 입력으로 이동하라는 응답을 준다(오래된 계획 질문은 하지 않음, D-045). 입력 수정용으로 저장된 값을 돌려주고, 재로그인 후 보유 자산 안내 문구 키('시작월 당시 쓸 수 있던 돈', D-035)를 함께 준다. '결과반영' 버튼은 만들지 않는다.",
-  "acceptance": [
-   "Given 저장된 계획이 있는 계정 When 현재 계획을 조회하면 Then 시작월과 입력값과 결과가 저장한 그대로 온다",
-   "Given 저장된 계획이 없는 계정 When 조회하면 Then 빈 입력 화면 응답이고 시작월을 만들지 않는다",
-   "Given 6개월 전 시작월 계획 When 조회하면 Then 오래된 계획 질문 없이 결과가 온다(D-045)"
-  ],
-  "done_when": [
-   "./gradlew test 통과",
-   "./gradlew checkstyleMain checkstyleTest 통과"
-  ],
-  "refs": [
-   "docs/srs.md#FR-PLAN-06 수용 기준(D-045)",
-   "docs/srs.md#FR-PLAN-05"
-  ],
-  "issue": 31
- },
- {
-  "id": "T-024",
-  "title": "[calc] POST /internal/calc: CalcComparison, diff, display, 검증 오류",
-  "team": "A",
-  "area": [
-   "backend"
-  ],
-  "priority": "must",
-  "week": 2,
-  "status": "ready",
-  "depends_on": [
-   "T-002",
-   "T-003",
-   "T-009",
-   "T-019",
-   "T-020",
-   "T-021"
-  ],
-  "requirements": [
-   "FR-AI-06",
-   "FR-AI-07",
-   "NFR-INT-03",
-   "D-033",
-   "D-041",
-   "D-013"
-  ],
-  "paths": [
-   "backend/src/main/java/com/moeun/backend/calc/web/**",
-   "backend/src/main/java/com/moeun/backend/calc/CalcComparison.java",
-   "backend/src/test/java/com/moeun/backend/calc/web/**"
-  ],
-  "summary": "ai-server가 부르는 내부 계산 API를 T-002 계약대로 만든다. 내부 키 헤더를 검사하고, 현재 계획에 conditionChanges만 얹어 계산해 current, changed, diff(Spring이 뺄셈), display를 돌려주며 calc_run(CHAT)을 기록한다. 이전 변경은 누적하지 않고 시작월은 현재 계획의 값이다. CalcComparison은 이후 비교·대안 기능이 재사용한다.",
-  "acceptance": [
-   "Given 현재 월 30만원 계획 When monthlySavingAmount=500000으로 요청하면 Then current, changed, diff.byScenario가 오고 diff 값은 Spring이 계산한 값이다",
-   "Given 허용 범위 밖 값 When 요청하면 Then 422 VALIDATION_FAILED이고 calc_run은 기록되지 않는다",
-   "Given 계획이 없는 회원 When 요청하면 Then 409 NO_PLAN이다",
-   "Given 내부 키가 없거나 틀림 When 요청하면 Then 401 INVALID_INTERNAL_KEY이다",
-   "Given 5월에 요청 When 3월 시작월 계획을 계산하면 Then 시작월은 3월이다"
-  ],
-  "done_when": [
-   "./gradlew test 통과",
-   "./gradlew test --tests ModularityTests 통과",
-   "T-002 계약 예시 JSON과 응답이 일치(계약 테스트)",
-   "./gradlew checkstyleMain checkstyleTest 통과"
-  ],
-  "refs": [
-   "docs/design/b-team-contracts.md C-2, C-3, A-0, A-0b",
-   "docs/srs.md#FR-AI-06"
-  ],
-  "issue": 32
- },
- {
-  "id": "T-025",
-  "title": "[plan] 적용·되돌리기 서비스와 되돌리기 REST(POST /api/plan/undo)",
-  "team": "A",
-  "area": [
-   "backend"
-  ],
-  "priority": "must",
-  "week": 2,
-  "status": "ready",
-  "depends_on": [
-   "T-004",
-   "T-011",
-   "T-021",
-   "T-012"
-  ],
-  "requirements": [
-   "FR-PLAN-03",
-   "FR-PLAN-04",
-   "D-013",
-   "D-016",
-   "D-041",
-   "D-044"
-  ],
-  "paths": [
-   "backend/src/main/java/com/moeun/backend/plan/**",
-   "backend/src/test/java/com/moeun/backend/plan/**"
-  ],
-  "summary": "조건 변경값을 받아 새 plan_version을 만들고 current/previous를 갱신하는 PlanApplyService와, 직전 1개로 돌아가는 되돌리기를 구현한다. 모두 expectedRevision으로 낙관적 락을 걸고 시작월은 복사한다. chatMessageId로 적용하는 컨트롤러는 모듈 순환을 피하려고 chat 모듈(T-037)이 이 서비스를 호출한다.",
-  "acceptance": [
-   "Given revision이 맞는 적용 요청 When 실행하면 Then 새 버전이 생기고 undoAvailable=true이며 시작월은 그대로다",
-   "Given revision이 맞지 않는 요청 When 실행하면 Then 409 PLAN_CHANGED이다",
-   "Given 적용 직후 When 되돌리기를 하면 Then 직전 계획으로 돌아가고 시작월은 그대로다",
-   "Given 되돌릴 이전 버전이 없을 때 When 되돌리기하면 Then 409 NOTHING_TO_UNDO이다",
-   "Given 범위 밖 조건값 When 적용하면 Then 422이고 계획은 바뀌지 않는다(D-033)"
-  ],
-  "done_when": [
-   "./gradlew test 통과",
-   "./gradlew test --tests ModularityTests 통과",
-   "./gradlew checkstyleMain checkstyleTest 통과"
-  ],
-  "refs": [
-   "docs/design/b-team-contracts.md A-1, A-2",
-   "docs/srs.md#FR-PLAN-04 수용 기준"
-  ],
-  "issue": 33
- },
- {
-  "id": "T-026",
-  "title": "[auth] 로그아웃 엔드포인트와 TokenRenewalFilter, @SkipRenewal — M-6",
-  "team": "A",
-  "area": [
-   "backend"
-  ],
-  "priority": "must",
-  "week": 2,
-  "status": "blocked",
-  "depends_on": [
-   "T-008"
-  ],
-  "requirements": [
-   "FR-AUTH-02",
-   "FR-AUTH-03",
-   "NFR-SEC-02",
-   "D-031",
-   "M-6"
-  ],
-  "paths": [
-   "backend/src/main/java/com/moeun/backend/auth/**",
-   "backend/src/main/java/com/moeun/backend/config/security/**",
-   "backend/src/test/java/com/moeun/backend/auth/**"
-  ],
-  "summary": "Q-042 결정 대기(권장안 A로 진행 가능). 로그아웃은 서버가 쿠키를 만료시키는 POST /api/auth/logout, TokenRenewalFilter는 사용자 조작 요청에만 새 토큰을 발급하고 대화 폴링은 @SkipRenewal로 제외한다. 권장안 A가 아니면(서버 세션으로 변경) 이 작업의 범위가 달라진다.",
-  "acceptance": [
-   "Given 로그인한 사용자 When 로그아웃을 호출하면 Then Max-Age=0 쿠키가 내려오고 이후 요청은 401이다",
-   "Given 마지막 사용자 조작 후 30분이 지난 토큰 When 요청하면 Then 401이다",
-   "Given @SkipRenewal이 붙은 폴링 요청 When 처리하면 Then 새 토큰이 발급되지 않아 만료 시간이 늘지 않는다"
-  ],
-  "done_when": [
-   "./gradlew test 통과",
-   "./gradlew checkstyleMain checkstyleTest 통과"
-  ],
-  "refs": [
-   "docs/design/alignment.md 2-1, 3-2, M-6",
-   "docs/open-questions.md Q-042"
-  ],
-  "issue": 34
- },
- {
-  "id": "T-027",
-  "title": "[ai] planContext 기반 설명 모드(EXPLAIN)와 display 인용 규칙",
-  "team": "B",
-  "area": [
-   "ai-server"
-  ],
-  "priority": "must",
-  "week": 2,
-  "status": "ready",
-  "depends_on": [
-   "T-003",
-   "T-013",
-   "T-014",
-   "T-015",
-   "T-010"
-  ],
-  "requirements": [
-   "FR-AI-01",
-   "FR-AI-02",
-   "D-030",
-   "NFR-USA-01"
-  ],
-  "paths": [
-   "ai-server/app/llm/agent.py",
-   "ai-server/app/llm/prompts.py",
-   "ai-server/app/schemas.py",
-   "ai-server/tests/test_explain.py"
-  ],
-  "summary": "mode=EXPLAIN일 때 planContext(T-003)만으로 결과의 의미를 쉬운 말로 설명한다. 금액은 display 문자열을 그대로 인용하고 직접 계산하지 않는다. 계정 식별 정보는 프롬프트에 넣지 않는다.",
-  "acceptance": [
-   "Given planContext 예시 When EXPLAIN을 처리하면 Then 설명의 금액은 display 문자열과 같다",
-   "Given planContext에 없는 값을 묻는 상황 When 답하면 Then 값을 지어내지 않고 모른다고 답한다",
-   "Given 프롬프트 When 내용을 검사하면 Then memberId가 들어 있지 않다"
-  ],
-  "done_when": [
-   "uv run pytest 통과",
-   "uv run ruff check . 와 uv run mypy 통과"
-  ],
-  "refs": [
-   "docs/design/b-team-contracts.md C-1, C-1a",
-   "docs/srs.md#FR-AI-02"
-  ],
-  "issue": 35
- },
- {
-  "id": "T-028",
-  "title": "[ai] 본문 상품명·추천 표현 검사 — M-4",
-  "team": "B",
-  "area": [
-   "ai-server"
-  ],
-  "priority": "must",
-  "week": 2,
-  "status": "ready",
-  "depends_on": [
-   "T-013"
-  ],
-  "requirements": [
-   "CP-06",
-   "NFR-USA-02",
-   "D-028",
-   "M-4"
-  ],
-  "paths": [
-   "ai-server/app/llm/assemble.py",
-   "ai-server/app/llm/prompts.py",
-   "ai-server/tests/test_guardrails.py"
-  ],
-  "summary": "프롬프트에 규칙(본문은 'S&P500 추종 ETF'로만, 추천 금지)을 넣고, assemble 단계에서 본문의 상품명(KODEX, TIGER 등)과 '추천' 표현을 검사한다. 출처 링크 텍스트는 제외한다. 걸리면 해당 문구를 고치거나 실패로 처리한다.",
-  "acceptance": [
-   "Given 본문에 'KODEX'가 들어간 모델 출력 When assemble하면 Then 거부되거나 'S&P500 추종 ETF'로 바뀐다",
-   "Given 출처 citation의 제목에 상품명 When assemble하면 Then 출처 제목은 그대로 보존된다(D-028)",
-   "Given '이 상품을 추천해요' 출력 When assemble하면 Then 걸러진다. 단 '추천하지 않아요' 부정문은 통과한다(CF-07)"
-  ],
-  "done_when": [
-   "uv run pytest 통과",
-   "uv run ruff check . 와 uv run mypy 통과"
-  ],
-  "refs": [
-   "docs/design/alignment.md 2-3, M-4",
-   "docs/srs.md#CP-06"
-  ],
-  "issue": 36
- },
- {
-  "id": "T-029",
-  "title": "[ai] AI 응답 숫자 자동 대조(NUMBER_MISMATCH) — PR-04",
-  "team": "B",
-  "area": [
-   "ai-server"
-  ],
-  "priority": "must",
-  "week": 2,
-  "status": "ready",
-  "depends_on": [
-   "T-015",
-   "T-027"
-  ],
-  "requirements": [
-   "FR-AI-02",
-   "FR-AI-04",
-   "NFR-INT-01",
-   "PR-04"
-  ],
-  "paths": [
-   "ai-server/app/llm/assemble.py",
-   "ai-server/app/llm/number_check.py",
-   "ai-server/tests/test_number_check.py"
-  ],
-  "summary": "모델이 만든 본문 속 금액·기간 표현을 planContext와 계산 응답의 값과 대조하고, 근거 없는 숫자가 있으면 AgentError(NUMBER_MISMATCH)로 실패시킨다. 숫자를 LLM이 만들지 못하게 하는 마지막 안전장치다.",
-  "acceptance": [
-   "Given 본문 금액이 display 값과 같을 때 When 대조하면 Then 통과한다",
-   "Given 본문에 계산 결과에 없는 금액 When 대조하면 Then NUMBER_MISMATCH 오류로 응답이 실패한다",
-   "Given 숫자가 없는 일반 설명 When 대조하면 Then 통과한다"
-  ],
-  "done_when": [
-   "uv run pytest 통과",
-   "uv run ruff check . 와 uv run mypy 통과"
-  ],
-  "refs": [
-   "docs/design/alignment.md 2-3",
-   "docs/srs.md#FR-AI-02"
-  ],
-  "issue": 37
- },
- {
-  "id": "T-030",
-  "title": "[ai] 범위 밖 질문 3유형 분류와 안내 문구를 문구표로 이전 — M-5",
-  "team": "B",
-  "area": [
-   "ai-server"
-  ],
-  "priority": "must",
-  "week": 2,
-  "status": "ready",
-  "depends_on": [
-   "T-010",
-   "T-013"
-  ],
-  "requirements": [
-   "FR-AI-09",
-   "CP-05",
-   "D-045",
-   "M-5"
-  ],
-  "paths": [
-   "ai-server/app/llm/prompts.py",
-   "ai-server/app/llm/agent.py",
-   "ai-server/tests/test_out_of_scope.py"
-  ],
-  "summary": "질문을 '조건 변경 / 설명 / 그 밖' 3유형으로 나누고(D-045), 그 밖이면 계산 없이 OUT_OF_SCOPE로 안내한 뒤 바꿀 수 있는 4개 조건을 알려준다. 하드코딩된 OUT_OF_SCOPE_COPY를 copy.ko.yml 키로 옮긴다. 개별주식 질문도 다루지 않는다고 안내한다.",
-  "acceptance": [
-   "Given '삼성전자 주식 사면 어때요' 질문 When 처리하면 Then calcRunId 없이 OUT_OF_SCOPE이고 문구는 문구표 키에서 온다",
-   "Given '이 ETF가 뭐예요' 설명 질문 When 처리하면 Then 계산 없이 ANSWER로 근거를 인용해 답한다",
-   "Given 코드 When 검색하면 Then OUT_OF_SCOPE_COPY 하드코딩 문구가 없다"
-  ],
-  "done_when": [
-   "uv run pytest 통과",
-   "uv run ruff check . 와 uv run mypy 통과"
-  ],
-  "refs": [
-   "docs/design/alignment.md M-5",
-   "docs/srs.md#FR-AI-09"
-  ],
-  "issue": 38
- },
- {
-  "id": "T-031",
-  "title": "[rag] RAG 근거 자료 적재와 검색 품질 점검",
-  "team": "B",
-  "area": [
-   "ai-server"
-  ],
-  "priority": "must",
-  "week": 2,
-  "status": "ready",
-  "depends_on": [
-   "T-016"
-  ],
-  "requirements": [
-   "FR-AI-10",
-   "NFR-INT-04",
-   "FR-AI-03"
-  ],
-  "paths": [
-   "ai-server/docs/rag-eval.md",
-   "ai-server/tests/test_rag_search.py",
-   "scripts/ingest/**"
-  ],
-  "summary": "T-016 목록의 자료를 기존 moeun-ingest CLI로 적재하고 대표 질문 10개 정도로 검색 품질(관련 chunk가 상위에 오는지)을 점검한다. 적재 절차를 스크립트로 남겨 데모 환경에서 다시 할 수 있게 한다.",
-  "acceptance": [
-   "Given 적재 완료 When 'ETF 위험' 질문으로 /rag/search를 부르면 Then 서로 다른 운용사 문서가 상위 결과에 섞여 나온다",
-   "Given 같은 문서를 다시 적재 When CLI를 실행하면 Then 중복 행이 생기지 않는다",
-   "Given 이용 허락이 없는 자료 When 적재를 시도하면 Then 적재되지 않는다"
-  ],
-  "done_when": [
-   "uv run pytest 통과",
-   "docs/rag-eval.md에 점검 결과가 기록됨"
-  ],
-  "refs": [
-   "ai-server/README.md 문서 적재",
-   "docs/srs.md#NFR-INT-04"
-  ],
-  "issue": 39
- },
- {
-  "id": "T-032",
-  "title": "[ai] ETF 위험 설명의 근거 인용: 서로 다른 운용사 출처 2개 이상",
-  "team": "B",
-  "area": [
-   "ai-server"
-  ],
-  "priority": "must",
-  "week": 2,
-  "status": "ready",
-  "depends_on": [
-   "T-027",
-   "T-031"
-  ],
-  "requirements": [
-   "FR-AI-03",
-   "FR-AI-10",
-   "D-028"
-  ],
-  "paths": [
-   "ai-server/app/llm/agent.py",
-   "ai-server/app/rag/**",
-   "ai-server/tests/test_citations.py"
-  ],
-  "summary": "ETF 위험을 설명할 때 RAG 검색을 하고 서로 다른 운용사 출처 2개 이상의 chunk를 citationChunkIds에 담는다(diversify_orgs). 인용은 이번 요청에서 실제 검색된 chunk만 넣는다. 본문은 상품명 대신 'S&P500 추종 ETF'로 쓴다.",
-  "acceptance": [
-   "Given ETF 위험을 묻는 질문 When 답하면 Then citationChunkIds에 서로 다른 org의 chunk가 2개 이상이다",
-   "Given 검색되지 않은 chunk ID When 응답을 보정하면 Then 인용에서 제거된다",
-   "Given 출처가 1곳뿐인 검색 결과 When 답하면 Then 가능한 만큼만 인용하고 거짓으로 채우지 않는다"
-  ],
-  "done_when": [
-   "uv run pytest 통과",
-   "uv run ruff check . 와 uv run mypy 통과"
-  ],
-  "refs": [
-   "docs/srs.md#FR-AI-03",
-   "ai-server/CLAUDE.md 절대 원칙 3"
-  ],
-  "issue": 40
- },
- {
-  "id": "T-033",
-  "title": "[chat] Spring chat 모듈 기반 + F-1 질문 전송 + ai-server 비동기 호출",
-  "team": "B",
-  "area": [
-   "backend"
-  ],
-  "priority": "must",
-  "week": 2,
-  "status": "ready",
-  "depends_on": [
-   "T-004",
-   "T-008",
-   "T-010"
-  ],
-  "requirements": [
-   "FR-AI-01",
-   "FR-AI-04",
-   "NFR-INT-03",
-   "D-030",
-   "D-046"
-  ],
-  "paths": [
-   "backend/src/main/java/com/moeun/backend/chat/**",
-   "backend/src/test/java/com/moeun/backend/chat/**"
-  ],
-  "summary": "chat 모듈의 엔티티·리포지토리와 POST /api/chat/messages(USER와 ASSISTANT PENDING 저장, 202)를 만든다. ChatAnswerRequested 이벤트를 받아 ai-server POST /chat을 호출하고 COMPLETED/FAILED로 갱신하며, 시간 초과(임시 30초)나 4xx/5xx이면 FAILED·FAILURE와 문구표 실패 안내를 기록한다. history는 최근 20개이며 보관 방식은 Q-041 결정에 따라 T-038에서 조정한다. 이전 답이 PENDING이면 409 ANSWER_PENDING이다.",
-  "acceptance": [
-   "Given 로그인한 회원 When 질문을 보내면 Then 202와 userMessageId, assistantMessageId, status=PENDING이 온다",
-   "Given ai-server가 {error:'BAD_OUTPUT'}를 돌려줄 때 When 처리하면 Then 메시지가 FAILED, messageType=FAILURE가 되고 계산 결과 화면은 영향받지 않는다(FR-AI-04)",
-   "Given ai 호출이 30초를 넘길 때 When 시간 초과가 나면 Then FAILED로 바뀐다",
-   "Given 이전 ASSISTANT 답이 PENDING 때 When 새 질문을 보내면 Then 409 ANSWER_PENDING이다",
-   "Given 2000자를 넘는 질문 When 보내면 Then 422이다"
-  ],
-  "done_when": [
-   "./gradlew test 통과(ai-server는 스텁 서버)",
-   "./gradlew test --tests ModularityTests 통과",
-   "./gradlew checkstyleMain checkstyleTest 통과"
-  ],
-  "refs": [
-   "docs/design/b-team-contracts.md F-1, C-1",
-   "backend/.claude/rules/modulith.md 이벤트 표"
-  ],
-  "issue": 41
- },
- {
-  "id": "T-034",
-  "title": "[chat] F-2 메시지 폴링 + 출처(citations) 조회",
-  "team": "B",
-  "area": [
-   "backend"
-  ],
-  "priority": "must",
-  "week": 2,
-  "status": "ready",
-  "depends_on": [
-   "T-033",
-   "T-026"
-  ],
-  "requirements": [
-   "FR-AI-01",
-   "FR-AI-03",
-   "FR-AI-04",
-   "D-028"
-  ],
-  "paths": [
-   "backend/src/main/java/com/moeun/backend/chat/**",
-   "backend/src/test/java/com/moeun/backend/chat/**"
-  ],
-  "summary": "GET /api/chat/messages?afterId=를 구현한다. PENDING이면 content는 null, FAILED면 문구표 실패 안내를 준다. COMPLETED에는 rag 모듈 서비스로 조회한 citations(제목, URL, 기관)를 붙인다. 이 엔드포인트는 @SkipRenewal로 토큰 만료 연장에서 제외한다(T-026의 어노테이션 사용, Q-042 권장안 A).",
-  "acceptance": [
-   "Given PENDING 메시지 When 폴링하면 Then status=PENDING이고 content는 null이다",
-   "Given 출처가 있는 COMPLETED 메시지 When 폴링하면 Then citations에 제목·URL·기관이 순서대로 온다",
-   "Given 다른 회원의 메시지 When 조회하면 Then 보이지 않는다",
-   "Given 폴링만 30분 계속 When 토큰을 보면 Then 만료가 연장되지 않는다"
-  ],
-  "done_when": [
-   "./gradlew test 통과",
-   "./gradlew test --tests ModularityTests 통과",
-   "./gradlew checkstyleMain checkstyleTest 통과"
-  ],
-  "refs": [
-   "docs/design/b-team-contracts.md F-2"
-  ],
-  "issue": 42
- },
- {
-  "id": "T-035",
-  "title": "[chat] F-3 설명 요청 POST /api/chat/explanations",
-  "team": "B",
-  "area": [
-   "backend"
-  ],
-  "priority": "must",
-  "week": 2,
-  "status": "ready",
-  "depends_on": [
-   "T-033",
-   "T-021",
-   "T-064"
-  ],
-  "requirements": [
-   "FR-AI-01",
-   "FR-AI-02",
-   "FR-AI-04"
-  ],
-  "paths": [
-   "backend/src/main/java/com/moeun/backend/chat/**",
-   "backend/src/test/java/com/moeun/backend/chat/**"
-  ],
-  "summary": "결과 화면이 계산 결과를 그린 뒤 프론트가 부르는 설명 요청을 만든다. calcRunId가 그 회원의 PLAN 기록인지 확인하고, planContext(T-003)를 만들어 ai-server를 mode=EXPLAIN으로 부른다. 설명이 실패해도 결과 화면은 영향이 없다.",
-  "acceptance": [
-   "Given 내 계획의 calcRunId When 설명을 요청하면 Then 202와 assistantMessageId가 오고 EXPLANATION 메시지가 PENDING으로 생긴다",
-   "Given 남의 calcRunId When 요청하면 Then 404 NOT_FOUND이다",
-   "Given planContext When ai-server로 보내면 Then memberId와 계정 정보가 포함되지 않는다"
-  ],
-  "done_when": [
-   "./gradlew test 통과",
-   "./gradlew test --tests ModularityTests 통과",
-   "./gradlew checkstyleMain checkstyleTest 통과"
-  ],
-  "refs": [
-   "docs/design/b-team-contracts.md F-3, C-1a"
-  ],
-  "issue": 43
- },
- {
-  "id": "T-036",
-  "title": "[chat] F-4 비교 결과 조회와 applicable 판정",
-  "team": "B",
-  "area": [
-   "backend"
-  ],
-  "priority": "must",
-  "week": 2,
-  "status": "ready",
-  "depends_on": [
-   "T-024",
-   "T-034",
-   "T-013",
-   "T-064",
-   "T-011"
-  ],
-  "requirements": [
-   "FR-AI-07",
-   "D-022",
-   "D-041"
-  ],
-  "paths": [
-   "backend/src/main/java/com/moeun/backend/chat/**",
-   "backend/src/test/java/com/moeun/backend/chat/**"
-  ],
-  "summary": "GET /api/chat/messages/{id}/comparison을 구현한다. RECALC_RESULT 메시지에서 condition_changes와 calc_run 버전으로 current·changed·diff를 다시 계산해 돌려준다(저장하지 않음). applicable은 회원의 가장 최근 RECALC_RESULT이고 기준 plan_version이 현재 계획과 같을 때만 true다. 그래프 시계열은 넣지 않는다.",
-  "acceptance": [
-   "Given 가장 최근 RECALC_RESULT When 조회하면 Then current, changed, diff, applicable=true이다",
-   "Given 비교 결과가 두 개 있을 때 When 첫 번째를 조회하면 Then applicable=false이다(D-041)",
-   "Given RECALC_RESULT가 아닌 메시지 When 조회하면 Then 404이다",
-   "Given 그 사이 계획이 바뀐 경우 When 조회하면 Then applicable=false이다"
-  ],
-  "done_when": [
-   "./gradlew test 통과",
-   "./gradlew test --tests ModularityTests 통과",
-   "./gradlew checkstyleMain checkstyleTest 통과"
-  ],
-  "refs": [
-   "docs/design/b-team-contracts.md F-4",
-   "docs/srs.md#FR-AI-07 수용 기준"
-  ],
-  "issue": 44
- },
- {
-  "id": "T-037",
-  "title": "[chat] 대화 '내 계획으로 적용' 엔드포인트(chatMessageId, 재검증, 확인창 없음)",
-  "team": "B",
-  "area": [
-   "backend"
-  ],
-  "priority": "must",
-  "week": 2,
-  "status": "ready",
-  "depends_on": [
-   "T-025",
-   "T-036",
-   "T-013"
-  ],
-  "requirements": [
-   "FR-AI-07",
-   "FR-PLAN-03",
-   "FR-PLAN-04",
-   "D-016",
-   "D-033",
-   "D-041",
-   "D-046"
-  ],
-  "paths": [
-   "backend/src/main/java/com/moeun/backend/chat/web/**",
-   "backend/src/main/java/com/moeun/backend/chat/application/**",
-   "backend/src/test/java/com/moeun/backend/chat/**"
-  ],
-  "summary": "대화창 적용 요청을 받아 chat_message.condition_changes를 읽고 다시 검증한 뒤 A팀의 PlanApplyService를 호출한다(source=CHAT). 화면에서 값을 다시 받지 않아 범위 밖 값이 들어올 길이 없다. 가장 최근 비교가 아니면 409 STALE_COMPARISON이고, 성공하면 되돌리기 가능 응답을 준다.",
-  "acceptance": [
-   "Given 가장 최근 비교 결과 When 적용하면 Then 확인창 없이 새 plan_version(source=CHAT)이 생기고 시작월은 그대로다",
-   "Given 이전(최신이 아닌) 비교 결과 When 적용하면 Then 409 STALE_COMPARISON이다",
-   "Given 저장된 변경값이 이후 범위 규칙에서 벗어난 경우 When 적용하면 Then 422이고 계획은 바뀌지 않는다",
-   "Given revision 불일치 When 적용하면 Then 409 PLAN_CHANGED이다"
-  ],
-  "done_when": [
-   "./gradlew test 통과",
-   "./gradlew test --tests ModularityTests 통과(plan이 chat을 의존하지 않음)",
-   "./gradlew checkstyleMain checkstyleTest 통과"
-  ],
-  "refs": [
-   "docs/design/b-team-contracts.md A-1",
-   "docs/srs.md#FR-AI-07 수용 기준"
-  ],
-  "issue": 45
- },
- {
-  "id": "T-038",
-  "title": "[chat] 대화 기록 삭제: 로그인·로그아웃 때 이전 대화 삭제",
-  "team": "B",
-  "area": [
-   "backend"
-  ],
-  "priority": "must",
-  "week": 2,
-  "status": "blocked",
-  "depends_on": [
-   "T-033",
-   "T-008",
-   "T-026"
-  ],
-  "requirements": [
-   "NFR-INT-03",
-   "D-030",
-   "FR-AI-01"
-  ],
-  "paths": [
-   "backend/src/main/java/com/moeun/backend/chat/application/**",
-   "backend/src/main/java/com/moeun/backend/auth/LoggedIn.java",
-   "backend/src/test/java/com/moeun/backend/chat/**"
-  ],
-  "summary": "Q-041 결정 대기(권장안 A로 진행 가능). 권장안 A는 로그인 때 그 계정의 이전 대화를 지우고 로그아웃에서도 지우는 것이다. auth가 이벤트(LoggedIn, LoggedOut)를 발행하고 chat이 받아 chat_message와 citation을 삭제한다. 결정이 B(계속 보관)로 나면 삭제를 빼고 이전 대화 복원 UI가 필요해 범위가 달라진다.",
-  "acceptance": [
-   "Given 이전 대화가 있는 회원 When 다시 로그인하면 Then 그 회원의 이전 chat_message가 없다",
-   "Given 다른 회원의 대화 When 내가 로그인하면 Then 남의 대화는 지워지지 않는다",
-   "Given 이벤트가 두 번 도착 When 삭제하면 Then 결과가 같다(멱등)"
-  ],
-  "done_when": [
-   "./gradlew test 통과",
-   "./gradlew test --tests ModularityTests 통과(auth가 chat을 의존하지 않고 이벤트로 푼다)",
-   "./gradlew checkstyleMain checkstyleTest 통과"
-  ],
-  "refs": [
-   "docs/design/alignment.md 3-1",
-   "docs/open-questions.md Q-041"
-  ],
-  "issue": 46
- },
- {
-  "id": "T-039",
-  "title": "[front] 로그인 화면, 라우팅 가드, 헤더 로그아웃",
-  "team": "A",
-  "area": [
-   "frontend"
-  ],
-  "priority": "must",
-  "week": 2,
-  "status": "ready",
-  "depends_on": [
-   "T-004",
-   "T-005"
-  ],
-  "requirements": [
-   "FR-AUTH-01",
-   "FR-AUTH-02",
-   "FR-AUTH-03"
-  ],
-  "paths": [
-   "frontend/src/features/auth/**",
-   "frontend/src/app/routes/**"
-  ],
-  "summary": "데모 계정 로그인 화면(회원가입 없음), 비로그인 접근 차단, 401이면 로그인으로 이동, 모든 로그인 화면 헤더의 로그아웃 버튼을 만든다. 처음에는 목 모드로 개발한다. 로그인 직후 계획이 있으면 결과 화면, 없으면 빈 입력 화면으로 보낸다.",
-  "acceptance": [
-   "Given 비로그인 사용자 When 입력·결과 주소로 가면 Then 로그인 화면으로 간다",
-   "Given 로그인 실패 When 제출하면 Then 오류 문구가 보이고 이동하지 않는다",
-   "Given 로그인한 사용자 When 어느 화면에서든 헤더의 로그아웃을 누르면 Then 로그인 화면으로 간다",
-   "Given 만료된 세션 When 요청이 401이면 Then 로그인 화면으로 이동한다"
-  ],
-  "done_when": [
-   "프론트 빌드·린트·테스트(T-005 README의 명령) 통과",
-   "목 모드에서 위 시나리오가 동작"
-  ],
-  "refs": [
-   "docs/srs.md#FR-AUTH-02 수용 기준",
-   "docs/srs.md#FR-PLAN-06"
-  ],
-  "issue": 47
- },
- {
-  "id": "T-040",
-  "title": "[front] 입력 화면(목표 종류·금액·기간·보유 자산·월 저축액·적금 금리) + 검증 오류",
-  "team": "A",
-  "area": [
-   "frontend"
-  ],
-  "priority": "must",
-  "week": 2,
-  "status": "ready",
-  "depends_on": [
-   "T-004",
-   "T-005"
-  ],
-  "requirements": [
-   "FR-INP-01",
-   "FR-INP-03",
-   "FR-INP-04",
-   "FR-INP-05",
-   "FR-INP-06",
-   "FR-INP-07",
-   "FR-INP-09",
-   "NFR-USA-01",
-   "D-045"
-  ],
-  "paths": [
-   "frontend/src/features/input/**"
-  ],
-  "summary": "목표 종류 1개 선택 후 다음 질문이 보이고(고르기 전에는 숨김), 목표 금액·목표 기간(n년 n개월)·보유 자산·월 저축 가능 금액을 필수로, 적금 금리를 선택으로 받는 화면이다. '정하지 않음', '잘 모르겠어요' 선택지는 만들지 않는다(D-045). 만원 단위 입력을 원 단위로 변환하고 서버 422 오류를 필드별로 보여준다. 이전 계획이 있으면 값이 채워진다.",
-  "acceptance": [
-   "Given 목표 종류를 고르지 않은 상태 When 화면을 보면 Then 다음 질문이 보이지 않는다",
-   "Given 목표 기간이 비어 있음 When 결과 보기를 누르면 Then 기간 입력을 요구하고 이동하지 않는다(D-045)",
-   "Given 서버가 월 저축액 OUT_OF_RANGE(min, max)를 돌려줌 When 응답을 받으면 Then 해당 칸 아래에 허용 범위를 안내한다",
-   "Given 50(만원) 입력 When 요청을 보내면 Then 500000(원)으로 전송된다",
-   "Given 적금 금리를 비움 When 제출하면 Then 기본 금리가 적용된다는 안내가 보인다"
-  ],
-  "done_when": [
-   "프론트 빌드·린트·테스트 통과",
-   "목 모드에서 정상·422 응답 화면이 동작"
-  ],
-  "refs": [
-   "docs/srs.md#FR-INP-04, FR-INP-06 수용 기준(D-045)",
-   "docs/design/b-team-contracts.md C-3"
-  ],
-  "issue": 48
- },
- {
-  "id": "T-041",
-  "title": "[front] 결과 화면 1: 요약, 조건 바, 목표 초과 안내, 가정 보기, 면책",
-  "team": "A",
-  "area": [
-   "frontend"
-  ],
-  "priority": "must",
-  "week": 2,
-  "status": "ready",
-  "depends_on": [
-   "T-040",
-   "T-004",
-   "T-005"
-  ],
-  "requirements": [
-   "FR-RES-01",
-   "FR-RES-02",
-   "FR-RES-05",
-   "FR-RES-06",
-   "FR-RES-07",
-   "FR-INP-11",
-   "D-027",
-   "D-038"
-  ],
-  "paths": [
-   "frontend/src/features/result/summary/**",
-   "frontend/src/features/result/assumptions/**"
-  ],
-  "summary": "결과 화면 첫 영역(목표일의 세후 예상 자산, 달성/미달, 목표 대비), 상단 조건 바와 입력 수정 진입점, 가정 보기(펼침, 환율 변동 미반영 문구, 데이터 기준월), 맨 아래 면책 문구(상시)를 만든다. 보유 자산이 목표 이상이면 초과 안내만 보인다. 금액·기간 문자열은 서버 display를 그대로 쓴다.",
-  "acceptance": [
-   "Given 미달 결과 When 화면을 보면 Then 약 N만원 · 미달 라벨이 보인다",
-   "Given 보유 자산 >= 목표 When 결과 화면이 뜨면 Then 계산 결과 대신 초과 안내와 목표 수정 안내가 보인다",
-   "Given 가정 보기를 펼침 When 보면 Then '환율 변동은 반영하지 않았어요'와 데이터 기준월이 보인다",
-   "Given 어떤 결과 상태든 When 화면 맨 아래를 보면 Then 면책 문구가 보인다",
-   "Given 조건 바의 입력 수정 When 누르면 Then 입력 화면에 현재 값이 채워져 있다"
-  ],
-  "done_when": [
-   "프론트 빌드·린트·테스트 통과",
-   "목 모드에서 미달·달성·초과 3가지 응답 화면 확인"
-  ],
-  "refs": [
-   "docs/srs.md#FR-RES-01, FR-RES-02, FR-RES-06, FR-RES-07"
-  ],
-  "issue": 49
- },
- {
-  "id": "T-042",
-  "title": "[front] 결과 화면 2: 3구간, 과거 수익률 고지, 월별 그래프",
-  "team": "A",
-  "area": [
-   "frontend"
-  ],
-  "priority": "must",
-  "week": 2,
-  "status": "ready",
-  "depends_on": [
-   "T-041",
-   "T-005"
-  ],
-  "requirements": [
-   "FR-RES-03",
-   "FR-RES-04",
-   "D-029",
-   "CP-04"
-  ],
-  "paths": [
-   "frontend/src/features/result/scenarios/**",
-   "frontend/src/features/result/chart/**"
-  ],
-  "summary": "ETF가 포함된 계획이면 좋았던 때·평균·나빴던 때를 나란히 보여주고 바로 아래에 과거 수익률 고지 한 줄을 둔다. 매달 자산이 쌓이는 꺾은선 그래프를 목표선과 함께 계산 시작월부터 보여준다. ETF 0%(적금만)이면 3구간 영역을 보여주지 않는다.",
-  "acceptance": [
-   "Given ETF가 포함된 계획 When 결과 화면이 뜨면 Then 3구간 3개 값과 그 바로 아래 과거 수익률 고지가 보인다",
-   "Given ETF 0% 계획 When 보면 Then 3구간 영역이 없다",
-   "Given 월별 시계열 When 그래프를 보면 Then 가로축이 계산 시작월부터이고 목표선이 함께 있다"
-  ],
-  "done_when": [
-   "프론트 빌드·린트·테스트 통과",
-   "목 모드에서 3구간 있음/없음 응답 확인"
-  ],
-  "refs": [
-   "docs/srs.md#FR-RES-03 수용 기준, FR-RES-04"
-  ],
-  "issue": 50
- },
- {
-  "id": "T-043",
-  "title": "[front] 입력 수정 복귀, 로그인 후 진입 분기, 되돌리기 토스트",
-  "team": "A",
-  "area": [
-   "frontend"
-  ],
-  "priority": "must",
-  "week": 2,
-  "status": "ready",
-  "depends_on": [
-   "T-041",
-   "T-004",
-   "T-005"
-  ],
-  "requirements": [
-   "FR-PLAN-04",
-   "FR-PLAN-05",
-   "FR-PLAN-06",
-   "FR-INP-11",
-   "D-035",
-   "D-041"
-  ],
-  "paths": [
-   "frontend/src/features/plan/**"
-  ],
-  "summary": "로그인 직후 계획이 있으면 결과 화면, 없으면 빈 입력 화면으로 보낸다(오래된 계획 질문 없음). 입력 수정에서 보유 자산 안내 문구를 재로그인 후에는 '시작월({시작월}) 당시 쓸 수 있던 돈'으로 바꾸고 '결과반영' 버튼은 두지 않는다. 적용 직후 되돌리기 토스트를 보이고(대화 적용은 10초), 누르면 undo API를 호출해 결과 화면을 갱신한다.",
-  "acceptance": [
-   "Given 계획이 있는 계정 When 로그인하면 Then 결과 화면이 보인다",
-   "Given 재로그인한 사용자 When 입력 수정의 보유 자산 칸을 보면 Then 안내가 '시작월(3월) 당시 쓸 수 있던 돈'이고 결과반영 버튼은 없다",
-   "Given 적용 직후 토스트 When 10초가 지나면 Then 토스트가 사라지고 되돌리기를 누를 수 없다",
-   "Given 토스트에서 되돌리기를 누름 When 응답이 오면 Then 결과 화면이 이전 계획으로 갱신되고 시작월 표시는 그대로다"
-  ],
-  "done_when": [
-   "프론트 빌드·린트·테스트 통과",
-   "목 모드에서 적용, 되돌리기, 409 PLAN_CHANGED 응답 처리 확인"
-  ],
-  "refs": [
-   "docs/srs.md#FR-PLAN-04 수용 기준",
-   "docs/srs.md#FR-PLAN-06 수용 기준(D-045)"
-  ],
-  "issue": 51
- },
- {
-  "id": "T-044",
-  "title": "[front] 대화창 기본: 메시지 목록, 질문 입력, 폴링, 되묻기·범위 밖 표시",
-  "team": "B",
-  "area": [
-   "frontend"
-  ],
-  "priority": "must",
-  "week": 2,
-  "status": "ready",
-  "depends_on": [
-   "T-004",
-   "T-005"
-  ],
-  "requirements": [
-   "FR-AI-01",
-   "FR-AI-04",
-   "FR-AI-06",
-   "FR-AI-09",
-   "NFR-USA-01"
-  ],
-  "paths": [
-   "frontend/src/features/chat/**"
-  ],
-  "summary": "결과 화면에 붙는 대화창을 만든다. 질문 전송(F-1), 1초 간격 폴링(F-2), PENDING 표시, messageType별 말풍선(ANSWER, CLARIFY, OUT_OF_SCOPE, FAILURE), 실패 안내 표시를 구현한다. 전송 중 다시 보낼 수 없게 막는다(409 ANSWER_PENDING). 목 모드로 먼저 개발한다.",
-  "acceptance": [
-   "Given 질문을 보냄 When 응답을 기다리면 Then 대기 표시가 보이고 입력 전송이 막힌다",
-   "Given FAILED 메시지 When 폴링으로 받으면 Then 실패 안내가 대화창에 보이고 결과 화면은 그대로다(FR-AI-04)",
-   "Given CLARIFY 메시지 When 받으면 Then 되묻는 문장이 보이고 비교 결과는 보이지 않는다",
-   "Given 401 응답 When 폴링 중 받으면 Then 로그인 화면으로 이동한다"
-  ],
-  "done_when": [
-   "프론트 빌드·린트·테스트 통과",
-   "목 모드에서 PENDING -> COMPLETED/FAILED 전환 확인"
-  ],
-  "refs": [
-   "docs/design/b-team-contracts.md F-1, F-2"
-  ],
-  "issue": 52
- },
- {
-  "id": "T-045",
-  "title": "[front] 대화창 비교 결과 카드와 '내 계획으로 적용' 버튼(최신만 활성)",
-  "team": "B",
-  "area": [
-   "frontend"
-  ],
-  "priority": "must",
-  "week": 2,
-  "status": "ready",
-  "depends_on": [
-   "T-044",
-   "T-043",
-   "T-005"
-  ],
-  "requirements": [
-   "FR-AI-06",
-   "FR-AI-07",
-   "FR-PLAN-04",
-   "D-016",
-   "D-022",
-   "D-041"
-  ],
-  "paths": [
-   "frontend/src/features/chat/comparison/**"
-  ],
-  "summary": "RECALC_RESULT 메시지에 현재 조건(내 계획)과 바꾼 조건의 숫자 비교 카드(F-4, display 그대로)를 보여주고 '내 계획으로 적용' 버튼을 둔다. 버튼은 가장 최근 비교에만 활성이고, 적용하면 확인창 없이 호출하고 결과 화면 전체를 갱신하며 되돌리기 토스트(T-043)를 띄운다. 되돌린 뒤에는 그 이전 카드들의 버튼을 모두 비활성으로 둔다(프론트 상태).",
-  "acceptance": [
-   "Given 비교 결과 두 개 When 화면을 보면 Then 첫 번째 카드의 적용 버튼은 비활성이고 마지막 카드만 활성이다",
-   "Given 비교 결과가 뜬 상태 When 적용 전에 결과 화면을 보면 Then 내 계획 값은 그대로다",
-   "Given 마지막 카드의 적용 버튼 When 누르면 Then 확인창 없이 적용되고 결과 화면이 갱신되며 토스트가 보인다",
-   "Given 적용 후 되돌림 When 대화창을 보면 Then 이전 카드의 적용 버튼이 모두 비활성이다",
-   "Given 적용 응답이 409 STALE_COMPARISON When 받으면 Then 최신 비교로 다시 하라는 안내가 보인다"
-  ],
-  "done_when": [
-   "프론트 빌드·린트·테스트 통과",
-   "목 모드에서 위 시나리오 확인"
-  ],
-  "refs": [
-   "docs/srs.md#FR-AI-07 수용 기준",
-   "docs/design/b-team-contracts.md F-4, A-1, A-2"
-  ],
-  "issue": 53
- },
- {
-  "id": "T-046",
-  "title": "[front] AI 설명 비동기 표시, 출처 링크, 설명 실패 안내",
-  "team": "B",
-  "area": [
-   "frontend"
-  ],
-  "priority": "must",
-  "week": 2,
-  "status": "ready",
-  "depends_on": [
-   "T-044",
-   "T-041",
-   "T-005"
-  ],
-  "requirements": [
-   "FR-AI-01",
-   "FR-AI-03",
-   "FR-AI-04",
-   "D-028"
-  ],
-  "paths": [
-   "frontend/src/features/chat/explanation/**"
-  ],
-  "summary": "결과 화면이 계산 결과를 그린 직후 설명 요청(F-3)을 보내고, 대화창에 설명이 뒤이어 도착하게 한다. 출처는 문서 제목 링크로 보여주고(상품명 포함 가능) 본문 문구는 서버 응답 그대로 쓴다. 설명이 실패해도 계산 결과는 그대로이고 실패 안내만 보인다.",
-  "acceptance": [
-   "Given 결과 화면이 뜸 When 계산 결과가 그려지면 Then 설명 요청이 자동으로 나가고 결과는 설명을 기다리지 않고 보인다",
-   "Given 설명이 도착 When 출처가 2개 이상이면 Then 서로 다른 기관의 출처 링크가 보인다",
-   "Given 설명이 FAILED When 받으면 Then 대화창에 실패 안내가 보이고 결과 화면은 그대로다"
-  ],
-  "done_when": [
-   "프론트 빌드·린트·테스트 통과",
-   "목 모드에서 설명 성공·실패 확인"
-  ],
-  "refs": [
-   "docs/srs.md#FR-AI-01, FR-AI-03, FR-AI-04",
-   "docs/design/b-team-contracts.md F-3"
-  ],
-  "issue": 54
- },
- {
-  "id": "T-047",
-  "title": "[front] 목 제거: 프론트를 실제 Spring API에 연결(로그인·입력·결과·적용·대화)",
-  "team": "common",
-  "area": [
-   "frontend"
-  ],
-  "priority": "must",
-  "week": 3,
-  "status": "ready",
-  "depends_on": [
-   "T-022",
-   "T-023",
-   "T-025",
-   "T-039",
-   "T-042",
-   "T-043",
-   "T-037",
-   "T-044",
-   "T-045",
-   "T-046"
-  ],
-  "requirements": [
-   "FR-INP-10",
-   "FR-PLAN-03",
-   "FR-PLAN-04",
-   "FR-AUTH-01"
-  ],
-  "paths": [
-   "frontend/src/api/**",
-   "frontend/src/mocks/**",
-   "frontend/src/features/auth/**",
-   "frontend/src/features/input/**",
-   "frontend/src/features/result/**",
-   "frontend/src/features/plan/**"
-  ],
-  "summary": "A팀 화면이 쓰던 목을 실제 API로 바꾸고 계약과 다른 응답 형식을 맞춘다. 로그인 -> 입력 -> 결과 -> 입력 수정 -> 재로그인 전체 흐름이 실서버로 도는지 확인한다. 이 작업은 통합 기간의 첫 작업이며 새 기능을 넣지 않는다.",
-  "acceptance": [
-   "Given 실서버 When 데모 계정으로 로그인해 입력하고 결과 보기를 누르면 Then 결과 화면이 서버 계산값으로 보인다",
-   "Given 로그아웃 후 재로그인 When 들어오면 Then 같은 계획과 시작월이 그대로 보인다",
-   "Given 범위 밖 입력 When 제출하면 Then 서버 422 안내가 칸별로 보인다"
-  ],
-  "done_when": [
-   "프론트 빌드·린트·테스트 통과",
-   "로컬에서 Spring+DB+프론트 조합으로 위 흐름 수동 확인 기록",
-   "./gradlew test 통과"
-  ],
-  "refs": [
-   "docs/design/b-team-contracts.md §3"
-  ],
-  "issue": 55
- },
- {
-  "id": "T-048",
-  "title": "[demo] 3서버 통합: 프론트 -> Spring -> ai-server -> Spring 대화 흐름 E2E",
-  "team": "common",
-  "area": [
-   "backend",
-   "ai-server",
-   "frontend"
-  ],
-  "priority": "must",
-  "week": 3,
-  "status": "ready",
-  "depends_on": [
-   "T-029",
-   "T-032",
-   "T-036",
-   "T-037",
-   "T-045",
-   "T-046",
-   "T-047"
-  ],
-  "requirements": [
-   "FR-AI-01",
-   "FR-AI-06",
-   "FR-AI-07",
-   "FR-PLAN-03",
-   "FR-PLAN-04",
-   "NFR-INT-03"
-  ],
-  "paths": [
-   "docker-compose.yml",
-   "docs/e2e-checklist.md",
-   "backend/src/test/java/com/moeun/backend/e2e/**"
-  ],
-  "summary": "세 서버를 함께 띄워 '결과 -> AI 설명 -> 대화로 조건 변경 -> 비교 -> 적용 -> 되돌리기' 전체를 실제 LLM으로 돌려 본다. 어긋나는 계약(키 표기 snake/camel, 시간 초과)을 찾아 고치고, ai 시간 초과값을 실측해 조정한다(TBD-33). 이 시점부터 새 기능은 넣지 않는다.",
-  "acceptance": [
-   "Given 세 서버가 떠 있을 때 When 월 저축액을 바꾸는 말을 하면 Then 대화창에 비교 결과가 뜨고 내 계획은 그대로다",
-   "Given 비교 결과 When 적용하면 Then 결과 화면이 갱신되고 되돌리기 토스트가 보이며 되돌리면 이전 계획으로 돌아온다",
-   "Given 범위 밖 값 When 말하면 Then 범위를 안내하며 되묻고 적용 버튼은 나타나지 않는다",
-   "Given ai-server를 중지한 상태 When 설명을 요청하면 Then 실패 안내만 보이고 결과 화면은 정상이다"
-  ],
-  "done_when": [
-   "docs/e2e-checklist.md의 모든 항목이 통과 표시됨",
-   "./gradlew test, uv run pytest, 프론트 테스트가 모두 통과"
-  ],
-  "refs": [
-   "docs/scope-review.md §3, §5-2",
-   "docs/design/b-team-contracts.md §0"
-  ],
-  "issue": 56
- },
- {
-  "id": "T-049",
-  "title": "[demo] 데모 대화 시나리오 3~4개 고정과 LLM 회귀 점검",
-  "team": "B",
-  "area": [
-   "ai-server",
-   "docs"
-  ],
-  "priority": "must",
-  "week": 3,
-  "status": "ready",
-  "depends_on": [
-   "T-048"
-  ],
-  "requirements": [
-   "FR-AI-06",
-   "FR-AI-07",
-   "FR-AI-09",
-   "CP-06",
-   "NFR-USA-01"
-  ],
-  "paths": [
-   "docs/demo-scenarios.md",
-   "ai-server/tests/scenarios/**"
-  ],
-  "summary": "데모에서 보여줄 대화 시나리오 3~4개(월 저축액 변경, 비중 변경, 기간 변경, 범위 밖 질문·범위 밖 값)를 고정하고 같은 시나리오를 여러 번 돌려 LLM 비결정성으로 깨지는지 확인한다. 깨지면 프롬프트·검증으로 고치고 안전하지 않으면 시나리오에서 제외한다. 새 기능은 넣지 않는다.",
-  "acceptance": [
-   "Given 고정한 시나리오 각각 When 실제 LLM으로 5회 실행하면 Then 규칙에 어긋나는 결과(누적, 상품명 본문 노출, 숫자 불일치)가 없다",
-   "Given 시나리오 문서 When 팀원이 보면 Then 입력 발화와 기대 화면이 적혀 있다"
-  ],
-  "done_when": [
-   "docs/demo-scenarios.md가 팀 승인",
-   "uv run pytest 통과",
-   "실행 결과가 docs/demo-scenarios.md에 기록됨"
-  ],
-  "refs": [
-   "docs/scope-review.md §5 위험 2"
-  ],
-  "issue": 57
- },
- {
-  "id": "T-050",
-  "title": "[demo] 데모 계정·시드·시연 입력 세트 준비",
-  "team": "common",
-  "area": [
-   "backend",
-   "docs"
-  ],
-  "priority": "must",
-  "week": 3,
-  "status": "ready",
-  "depends_on": [
-   "T-007",
-   "T-008"
-  ],
-  "requirements": [
-   "FR-AUTH-01",
-   "FR-DATA-01",
-   "FR-DATA-02",
-   "NFR-AVL-01"
-  ],
-  "paths": [
-   "backend/src/main/resources/seed/demo/**",
-   "docs/demo-setup.md"
-  ],
-  "summary": "동시 사용 인원만큼 데모 계정(해시 비밀번호), 시연용 입력 세트(미달 사례, 달성 사례, 초과 사례)와 환경 초기화 절차를 준비한다. 데모 직전에 DB를 깨끗한 상태로 되돌리는 방법을 문서로 남긴다.",
-  "acceptance": [
-   "Given 빈 DB When 시드를 실행하면 Then 데모 계정 N개와 활성 데이터 버전이 만들어진다",
-   "Given 데모 후 When 초기화 절차를 실행하면 Then 계획·대화가 지워지고 다시 시작할 수 있다"
-  ],
-  "done_when": [
-   "docs/demo-setup.md 절차대로 새 환경에서 재현됨",
-   "./gradlew test 통과"
-  ],
-  "refs": [
-   "docs/srs.md#FR-AUTH-01"
-  ],
-  "issue": 58
- },
- {
-  "id": "T-051",
-  "title": "[docs] 문구·추천 금지·면책·과거 수익률 고지 전체 점검",
-  "team": "common",
-  "area": [
-   "frontend",
-   "backend",
-   "ai-server"
-  ],
-  "priority": "must",
-  "week": 3,
-  "status": "ready",
-  "depends_on": [
-   "T-048"
-  ],
-  "requirements": [
-   "CP-05",
-   "CP-06",
-   "NFR-USA-01",
-   "NFR-USA-02",
-   "FR-RES-07",
-   "D-028",
-   "D-029"
-  ],
-  "paths": [
-   "copy/copy.ko.yml",
-   "docs/copy-review.md"
-  ],
-  "summary": "모든 화면과 AI 대화 결과에서 '추천' 표현, 본문 상품명 노출, 면책 문구·과거 수익률 고지 누락, 해요체·격식체 규칙을 점검하고 문구표만 고친다. 금융 데모에서 치명적인 문구 위험을 마지막으로 확인한다.",
-  "acceptance": [
-   "Given 모든 결과 상태 화면 When 점검하면 Then 맨 아래 면책 문구와 3구간 아래 과거 수익률 고지가 있다",
-   "Given AI 대화 시나리오 결과 When 본문을 보면 Then 상품명 대신 'S&P500 추종 ETF'로만 표현돼 있다",
-   "Given 문구표 When 점검하면 Then 코드에 하드코딩된 고정 문구가 남아 있지 않다"
-  ],
-  "done_when": [
-   "docs/copy-review.md의 점검표가 모두 체크됨",
-   "프론트·백엔드·ai-server 테스트가 통과"
-  ],
-  "refs": [
-   "docs/srs.md#CP-05, CP-06, NFR-USA-02"
-  ],
-  "issue": 59
- },
- {
-  "id": "T-052",
-  "title": "[demo] 통합 버그 수정 1(새 기능 없음)",
-  "team": "common",
-  "area": [
-   "backend",
-   "ai-server",
-   "frontend"
-  ],
-  "priority": "must",
-  "week": 3,
-  "status": "ready",
-  "depends_on": [
-   "T-048",
-   "T-049"
-  ],
-  "requirements": [
-   "FR-AI-07",
-   "FR-PLAN-04",
-   "FR-INP-10"
-  ],
-  "paths": [
-   "backend/**",
-   "ai-server/**",
-   "frontend/**"
-  ],
-  "summary": "T-048 통합과 T-049 시나리오 점검에서 나온 버그를 고친다. 각 버그는 별도 Issue로 만들어 연결하고 새 기능과 요구사항 변경은 하지 않는다. 한 파일을 동시에 고치지 않도록 버그별 담당을 나눈다.",
-  "acceptance": [
-   "Given 통합 점검에서 나온 버그 목록 When 수정하면 Then 각 버그에 재현 절차와 회귀 테스트가 있다",
-   "Given 수정 PR When 보면 Then 요구사항·API 계약 변경이 없다"
-  ],
-  "done_when": [
-   "./gradlew test, uv run pytest, 프론트 테스트 통과",
-   "버그 Issue가 모두 닫히거나 이월 사유가 적힘"
-  ],
-  "refs": [
-   "docs/scope-review.md §3"
-  ],
-  "issue": 60
- },
- {
-  "id": "T-053",
-  "title": "[demo] 통합 버그 수정 2와 데모 안정화(새 기능 없음)",
-  "team": "common",
-  "area": [
-   "backend",
-   "ai-server",
-   "frontend"
-  ],
-  "priority": "must",
-  "week": 3,
-  "status": "ready",
-  "depends_on": [
-   "T-052"
-  ],
-  "requirements": [
-   "NFR-AVL-01",
-   "FR-AI-04"
-  ],
-  "paths": [
-   "backend/**",
-   "ai-server/**",
-   "frontend/**"
-  ],
-  "summary": "남은 버그를 고치고 데모 환경 안정성(재기동 후 PENDING 메시지 복구, 기동 순서, 시간 초과 표시)을 확인한다. 새 기능은 넣지 않는다.",
-  "acceptance": [
-   "Given 서버를 재기동 When PENDING 메시지가 있었으면 Then 복구되거나 FAILED로 끝난다",
-   "Given T-052 이후 남은 버그 목록 When 확인하면 Then 모두 고쳤거나 시나리오에서 제외했다"
-  ],
-  "done_when": [
-   "./gradlew test, uv run pytest, 프론트 테스트 통과"
-  ],
-  "refs": [
-   "backend/.claude/rules/modulith.md 이벤트 표"
-  ],
-  "issue": 61
- },
- {
-  "id": "T-054",
-  "title": "[demo] 데모 리허설 1(전체 시나리오, 시간 측정)",
-  "team": "common",
-  "area": [
-   "docs"
-  ],
-  "priority": "must",
-  "week": 3,
-  "status": "ready",
-  "depends_on": [
-   "T-049",
-   "T-050",
-   "T-051",
-   "T-052"
-  ],
-  "requirements": [
-   "FR-AI-01",
-   "FR-AI-07",
-   "FR-PLAN-04"
-  ],
-  "paths": [
-   "docs/rehearsal-1.md"
-  ],
-  "summary": "팀이 처음부터 끝까지 데모를 한 번 돌려 시나리오, 소요 시간, 막히는 지점을 기록한다. 발견한 문제는 T-053에서 고친다.",
-  "acceptance": [
-   "Given 데모 시나리오 When 처음부터 끝까지 진행하면 Then 소요 시간과 문제 목록이 docs/rehearsal-1.md에 남는다"
-  ],
-  "done_when": [
-   "rehearsal-1.md가 팀 공유됨",
-   "문제마다 Issue가 연결됨"
-  ],
-  "refs": [
-   "docs/scope-review.md §3"
-  ],
-  "issue": 62
- },
- {
-  "id": "T-055",
-  "title": "[demo] 데모 리허설 2와 최종 실행 문서",
-  "team": "common",
-  "area": [
-   "docs"
-  ],
-  "priority": "must",
-  "week": 3,
-  "status": "ready",
-  "depends_on": [
-   "T-053",
-   "T-054"
-  ],
-  "requirements": [
-   "NFR-AVL-01"
-  ],
-  "paths": [
-   "docs/rehearsal-2.md",
-   "README.md",
-   "docs/demo-setup.md"
-  ],
-  "summary": "수정 후 한 번 더 전체 리허설을 하고 실행 방법(README, 환경 변수, 시드, 초기화)을 최종 정리한다. 데모 당일 재현이 가능한지 새 환경에서 확인한다.",
-  "acceptance": [
-   "Given 새 환경 When README 절차만 따라 하면 Then 세 서버가 뜨고 데모가 가능하다",
-   "Given 리허설 2 When 시나리오를 끝까지 진행하면 Then 중단 없이 끝난다"
-  ],
-  "done_when": [
-   "rehearsal-2.md 기록",
-   "README의 실행 절차가 실제로 검증됨"
-  ],
-  "refs": [
-   "docs/scope-review.md §3"
-  ],
-  "issue": 63
- },
- {
-  "id": "T-056",
-  "title": "[chat] 조건 변경 비교 API(FR-CMP-02) [2주차 말 판단 1순위]",
-  "team": "B",
-  "area": [
-   "backend"
-  ],
-  "priority": "should",
-  "week": 3,
-  "status": "ready",
-  "depends_on": [
-   "T-024",
-   "T-048"
-  ],
-  "requirements": [
-   "FR-CMP-02",
-   "FR-CMP-01",
-   "CP-07",
-   "D-045"
-  ],
-  "paths": [
-   "backend/src/main/java/com/moeun/backend/chat/web/compare/**",
-   "backend/src/test/java/com/moeun/backend/chat/compare/**"
-  ],
-  "summary": "2주차 말 판단 후 되살린다. 월 저축액·비중·적금 금리·기한 중 하나 이상을 바꾸면 현재 조건과 바꾼 조건을 나란히 돌려주는 API다. 계산은 A팀 CalcComparison(T-024)을 재사용하고 저장하지 않는다. 기한 없음 등 범위 밖 분기는 지원하지 않는다. 3주차 1~2일 안에 끝내지 못하면 포기한다.",
-  "acceptance": [
-   "Given 현재 계획 When 월 저축액과 기한 두 개를 바꿔 비교를 요청하면 Then current, changed, diff가 오고 내 계획은 그대로다",
-   "Given 허용 범위 밖 값 When 요청하면 Then 422 VALIDATION_FAILED다",
-   "Given ETF 비중 입력 When 비교하면 Then 그 비중의 위험 범위(3구간)가 함께 온다(FR-CMP-01)"
-  ],
-  "done_when": [
-   "./gradlew test 통과",
-   "./gradlew test --tests ModularityTests 통과",
-   "./gradlew checkstyleMain checkstyleTest 통과"
-  ],
-  "refs": [
-   "docs/srs.md#FR-CMP-02(Should 1순위)",
-   "docs/scope-review.md §3 빼는 순서 6"
-  ],
-  "issue": 64
- },
- {
-  "id": "T-057",
-  "title": "[front] 조건 변경 비교 영역과 '원래대로' [2주차 말 판단 1순위]",
-  "team": "B",
-  "area": [
-   "frontend"
-  ],
-  "priority": "should",
-  "week": 3,
-  "status": "ready",
-  "depends_on": [
-   "T-056",
-   "T-045"
-  ],
-  "requirements": [
-   "FR-CMP-02",
-   "FR-CMP-03",
-   "D-046"
-  ],
-  "paths": [
-   "frontend/src/features/compare/**"
-  ],
-  "summary": "2주차 말 판단 후 되살린다. 대화창 비교 카드 컴포넌트를 재사용해 결과 화면에 비교 영역을 만들고, '원래대로'를 누르면 바꾼 조건을 없앤다(프론트 상태만). 적용 요청은 A팀 확인 흐름(T-063)으로 넘긴다.",
-  "acceptance": [
-   "Given 비교 영역 When 조건 둘을 바꾸면 Then 현재 조건과 바꾼 조건이 나란히 보인다",
-   "Given 바꾼 조건이 있는 상태 When 원래대로를 누르면 Then 현재 조건 기준으로 돌아가고 저장은 일어나지 않는다"
-  ],
-  "done_when": [
-   "프론트 빌드·린트·테스트 통과",
-   "T-048 E2E 체크리스트의 기존 항목이 깨지지 않음"
-  ],
-  "refs": [
-   "docs/srs.md#FR-CMP-02, FR-CMP-03"
-  ],
-  "issue": 65
- },
- {
-  "id": "T-058",
-  "title": "[calc] 대안 3종 값 산출 API(FR-ALT-01·03) [2주차 말 판단 2순위]",
-  "team": "B",
-  "area": [
-   "backend"
-  ],
-  "priority": "should",
-  "week": 3,
-  "status": "ready",
-  "depends_on": [
-   "T-024",
-   "T-048"
-  ],
-  "requirements": [
-   "FR-ALT-01",
-   "FR-ALT-03",
-   "D-014",
-   "D-020"
-  ],
-  "paths": [
-   "backend/src/main/java/com/moeun/backend/chat/web/alternative/**",
-   "backend/src/test/java/com/moeun/backend/chat/alternative/**"
-  ],
-  "summary": "2주차 말 판단 후 되살린다. 기준 시나리오로 미달일 때만 대안을 돌려준다. 월 저축액, 비중, 기한(사용자가 입력한 기간까지) 하나씩만 바꿔 CalcComparison으로 계산한다. 목표 기한·월 저축액이 항상 있으므로 기한 없음·모름 분기는 없다.",
-  "acceptance": [
-   "Given 기준 시나리오로 미달인 계획 When 대안을 요청하면 Then 월 저축액·기한·비중 3가지가 각각 하나의 조건만 바꾼 결과로 온다",
-   "Given 달성하는 계획 When 대안을 요청하면 Then 대안 없음 응답이다(FR-ALT-01)",
-   "Given 기한을 늘리는 입력이 허용 범위 밖 When 요청하면 Then 422이다"
-  ],
-  "done_when": [
-   "./gradlew test 통과",
-   "./gradlew test --tests ModularityTests 통과",
-   "./gradlew checkstyleMain checkstyleTest 통과"
-  ],
-  "refs": [
-   "docs/srs.md#FR-ALT-01, FR-ALT-03",
-   "docs/scope-review.md §3 빼는 순서 6"
-  ],
-  "issue": 66
- },
- {
-  "id": "T-059",
-  "title": "[front] 대안 3종 카드와 기한 입력 그래프 [2주차 말 판단 2순위]",
-  "team": "B",
-  "area": [
-   "frontend"
-  ],
-  "priority": "should",
-  "week": 3,
-  "status": "ready",
-  "depends_on": [
-   "T-058",
-   "T-042"
-  ],
-  "requirements": [
-   "FR-ALT-02",
-   "FR-ALT-04",
-   "D-020",
-   "D-039"
-  ],
-  "paths": [
-   "frontend/src/features/alternative/**"
-  ],
-  "summary": "2주차 말 판단 후 되살린다. 미달일 때만 '월 저축액을 바꾸면 / 기한을 늘리면 / 비중을 바꾸면' 카드를 보여주고, 기한 카드는 입력 전에는 입력칸과 안내만 있는 빈 카드이며 입력하면 그 기간까지의 그래프를 카드에 보여준다. 그래프는 이 3가지만 보여준다.",
-  "acceptance": [
-   "Given 미달 계획 When 결과 화면이 뜨면 Then 카드 3개가 보이고 기한 카드는 빈 카드다",
-   "Given 기한 카드에서 기간 입력 When 확인하면 Then 그 기간까지의 그래프가 카드에 보인다",
-   "Given 달성 계획 When 결과 화면이 뜨면 Then 대안 영역이 없다"
-  ],
-  "done_when": [
-   "프론트 빌드·린트·테스트 통과"
-  ],
-  "refs": [
-   "docs/srs.md#FR-ALT-02 수용 기준"
-  ],
-  "issue": 67
- },
- {
-  "id": "T-060",
-  "title": "[plan] 대안·비교 적용 확인창과 취소(FR-PLAN-01·02) [2주차 말 판단 3순위]",
-  "team": "A",
-  "area": [
-   "frontend",
-   "backend"
-  ],
-  "priority": "should",
-  "week": 3,
-  "status": "ready",
-  "depends_on": [
-   "T-025",
-   "T-057",
-   "T-059"
-  ],
-  "requirements": [
-   "FR-PLAN-01",
-   "FR-PLAN-02",
-   "FR-ALT-04",
-   "D-016",
-   "D-046"
-  ],
-  "paths": [
-   "frontend/src/features/plan/confirm/**",
-   "backend/src/main/java/com/moeun/backend/plan/web/**"
-  ],
-  "summary": "2주차 말 판단 후 되살린다. 대안 카드나 비교 영역의 '내 계획으로 적용'을 누르면 바뀌는 내용을 보여주는 확인창을 띄우고, 취소하면 아무것도 바뀌지 않으며 적용하기면 기존 적용 API(T-025)와 되돌리기 토스트를 쓴다. 대화 적용은 확인창을 거치지 않는다.",
-  "acceptance": [
-   "Given 대안 카드 When 적용을 누르면 Then 바뀌는 내용이 있는 확인창이 뜨고 내 계획은 그대로다",
-   "Given 확인창 When 취소를 누르면 Then 아무것도 적용되지 않는다",
-   "Given 확인창 When 적용하기를 누르면 Then 결과 화면이 갱신되고 되돌리기 토스트가 보인다",
-   "Given 대화창 적용 When 누르면 Then 확인창이 뜨지 않는다(D-016)"
-  ],
-  "done_when": [
-   "프론트 빌드·린트·테스트 통과",
-   "./gradlew test 통과"
-  ],
-  "refs": [
-   "docs/srs.md#FR-PLAN-01 수용 기준"
-  ],
-  "issue": 68
- },
- {
-  "id": "T-061",
-  "title": "[ai] 질문 예시 버튼(FR-AI-08) [2주차 말 판단 4순위]",
-  "team": "B",
-  "area": [
-   "frontend",
-   "ai-server"
-  ],
-  "priority": "should",
-  "week": 3,
-  "status": "ready",
-  "depends_on": [
-   "T-044",
-   "T-030"
-  ],
-  "requirements": [
-   "FR-AI-08",
-   "FR-AI-09"
-  ],
-  "paths": [
-   "frontend/src/features/chat/suggestions/**",
-   "copy/copy.ko.yml"
-  ],
-  "summary": "2주차 말 판단 후 되살린다. 무엇을 물어야 할지 모르는 사용자를 위해 자주 묻는 질문(월 저축액·비중·적금 금리·기한 변경, ETF 위험 설명) 버튼을 문구표에서 읽어 보여준다. 누르면 해당 질문을 보낸다.",
-  "acceptance": [
-   "Given 대화창 When 열면 Then 질문 예시 버튼이 보인다",
-   "Given 예시 버튼 When 누르면 Then 그 문장이 질문으로 전송된다",
-   "Given 예시 문구 When 보면 Then '추천' 표현이 없다"
-  ],
-  "done_when": [
-   "프론트 빌드·린트·테스트 통과",
-   "uv run pytest 통과"
-  ],
-  "refs": [
-   "docs/srs.md#FR-AI-08"
-  ],
-  "issue": 69
- },
- {
-  "id": "T-062",
-  "title": "[ai] 설명 다시 요청(FR-AI-05) [2주차 말 판단 5순위]",
-  "team": "B",
-  "area": [
-   "frontend",
-   "backend"
-  ],
-  "priority": "should",
-  "week": 3,
-  "status": "ready",
-  "depends_on": [
-   "T-035",
-   "T-046"
-  ],
-  "requirements": [
-   "FR-AI-05",
-   "FR-AI-04"
-  ],
-  "paths": [
-   "frontend/src/features/chat/retry/**",
-   "backend/src/main/java/com/moeun/backend/chat/web/**"
-  ],
-  "summary": "2주차 말 판단 후 되살린다. 설명 실패나 불만족 때 '설명 다시 요청'을 눌러 같은 엔드포인트(retryOfMessageId)로 새 설명을 받는다. 이미 PENDING이면 중복 요청을 막는다.",
-  "acceptance": [
-   "Given 실패한 설명 When 다시 요청하면 Then 새 EXPLANATION 메시지가 PENDING으로 생긴다",
-   "Given 설명이 PENDING When 다시 요청하면 Then 409 ANSWER_PENDING이다"
-  ],
-  "done_when": [
-   "./gradlew test 통과",
-   "프론트 빌드·린트·테스트 통과"
-  ],
-  "refs": [
-   "docs/srs.md#FR-AI-05",
-   "docs/design/b-team-contracts.md F-3"
-  ],
-  "issue": 70
- },
- {
-  "id": "T-063",
-  "title": "[ai] LangGraph 전환 [2주차 말 판단 마지막 순위]",
-  "team": "B",
-  "area": [
-   "ai-server"
-  ],
-  "priority": "should",
-  "week": 3,
-  "status": "blocked",
-  "depends_on": [
-   "T-048"
-  ],
-  "requirements": [
-   "NFR-INT-03"
-  ],
-  "paths": [
-   "ai-server/app/llm/**",
-   "ai-server/tests/**"
-  ],
-  "summary": "Q-043 결정 대기(권장안 A로 진행 가능). 권장안 A는 SDK 루프로 Must를 끝내고 2주차 말에 전환 여부를 판단하는 것이다. 전환하면 기존 테스트 통과가 완료 기준이고 노드는 6개 이내다. 사용자에게 보이는 기능은 늘지 않으므로 마지막 순위다.",
-  "acceptance": [
-   "Given 전환 전 모든 ai-server 테스트 When 전환 후 실행하면 Then 같은 결과로 통과한다",
-   "Given 되묻기와 계산 도구 호출 시나리오 When 실행하면 Then 전환 전과 같은 messageType이 나온다"
-  ],
-  "done_when": [
-   "uv run pytest 통과",
-   "uv run ruff check . 와 uv run mypy 통과",
-   "T-049 시나리오 회귀가 통과"
-  ],
-  "refs": [
-   "docs/design/alignment.md 3-3",
-   "docs/open-questions.md Q-043"
-  ],
-  "issue": 71
- },
- {
-  "id": "T-064",
-  "title": "[calc] PlanContextProvider: planContext 생성(C-1a)",
-  "team": "A",
-  "area": [
-   "backend"
-  ],
-  "priority": "must",
-  "week": 2,
-  "status": "ready",
-  "depends_on": [
-   "T-011",
-   "T-020",
-   "T-021",
-   "T-024"
-  ],
-  "requirements": [
-   "FR-AI-02",
-   "FR-AI-06",
-   "NFR-INT-01",
-   "D-030",
-   "D-045",
-   "D-060",
-   "D-061"
-  ],
-  "paths": [
-   "backend/src/main/java/com/moeun/backend/calc/PlanContextProvider.java",
-   "backend/src/main/java/com/moeun/backend/calc/PlanRunRef.java",
-   "backend/src/main/java/com/moeun/backend/calc/PlanContextView.java",
-   "backend/src/main/java/com/moeun/backend/calc/ConditionsView.java",
-   "backend/src/main/java/com/moeun/backend/calc/application/PlanContextProviderImpl.java",
-   "backend/src/test/java/com/moeun/backend/calc/PlanContextProviderTest.java",
-   "backend/src/test/java/com/moeun/backend/calc/PlanContextSerializationTest.java",
-   "backend/.claude/rules/persistence.md"
-  ],
-  "summary": "calc 공개 API PlanContextProvider(findPlanRun, findForCalcRun, findForCurrentPlan)와 PlanContextView·ConditionsView·PlanRunRef를 만든다. 소유권은 2단계(calc_run 조회 후 plan 공개 API findVersion, JOIN 금지), QUESTION은 #29 결과 조회 서비스를 재사용, display는 #28 공유 ResultDisplayBuilder, 직렬화는 계약 fixture와 같다(G-5b). persistence.md에 calc_run 소유권 예외 1줄(G-13). planContext 계약 G-7·G-5b·G-13.",
-  "acceptance": [
-   "Given 내 PLAN 기록 calcRunId When findForCalcRun을 부르면 Then 그 기록 기준의 PlanContextView가 오고 baselineScenario는 인자 값이다",
-   "Given 없는·남의·CHAT 기록 calcRunId When findPlanRun·findForCalcRun을 부르면 Then 모두 empty다",
-   "Given 계획이 없는 회원 When findForCurrentPlan을 부르면 Then empty다",
-   "Given 계약 부록 A 입력 When 직렬화하면 Then fixture와 같고(숫자 스케일 무시) memberId 키가 없으며 isAchieved 키가 있다"
-  ],
-  "done_when": [
-   "./gradlew test 통과",
-   "./gradlew test --tests ModularityTests 통과",
-   "./gradlew checkstyleMain checkstyleTest 통과"
-  ],
-  "refs": [
-   "docs/design/contracts/plan-context.md C1a-10, C1a-13",
-   "docs/design/contracts/plan-context-proposal.md G-5b, G-7, G-13"
-  ],
-  "issue": 78
- }
+  {
+    "id": "T-001",
+    "title": "[calc] 계산 명세 확정 + 손계산 골든 케이스",
+    "team": "A",
+    "area": [
+      "docs",
+      "backend"
+    ],
+    "priority": "must",
+    "week": 1,
+    "status": "ready",
+    "depends_on": [],
+    "requirements": [
+      "CP-01",
+      "CP-03",
+      "CP-04",
+      "TBD-01",
+      "TBD-04",
+      "TBD-05",
+      "TBD-16",
+      "D-006",
+      "D-032"
+    ],
+    "paths": [
+      "docs/calc-spec.md",
+      "backend/src/test/resources/golden/**"
+    ],
+    "summary": "계산 엔진의 전제(TBD-01 3구간 CAGR 적용 방식, TBD-04·05 월초/월말 납입과 매수 시점, TBD-16 달성 판정에 쓸 값)를 한 문서로 확정하고, 손으로 계산한 골든 케이스를 5개 이상 만든다. 계산 엔진 구현의 선행 작업이며 1주차 안에 끝나야 한다.",
+    "acceptance": [
+      "Given 적금만(ETF 0%)인 계획 When 손계산하면 Then 월별 납입·단리 이자·세후 예상 자산이 골든 케이스 파일에 원 단위로 적혀 있다",
+      "Given ETF가 포함된 계획 When 손계산하면 Then 좋았던 때·평균·나빴던 때 3개 값이 TBD-01에서 정한 방식으로 적혀 있다",
+      "Given 보유 자산 >= 목표 금액인 계획 When 명세를 보면 Then 계산 대신 초과 안내(ALREADY_EXCEEDED)로 가는 경계(같으면 초과)가 적혀 있다",
+      "Given 목표 대비 차이가 0원인 계획 When 판정하면 Then 달성으로 본다(CP-01)"
+    ],
+    "done_when": [
+      "docs/calc-spec.md가 A팀 두 명 이상 검토를 받고 팀에 공유됨",
+      "골든 케이스가 JSON/CSV로 backend/src/test/resources/golden에 들어가 있음(계산 코드 없이도 읽을 수 있음)"
+    ],
+    "refs": [
+      "project-workspace docs/srs.md#CP-03",
+      "docs/scope-review.md §4",
+      "docs/design/alignment.md 2-7"
+    ],
+    "issue": 9
+  },
+  {
+    "id": "T-002",
+    "title": "[contract] /internal/calc 응답·검증 오류 형식 확정(C-2, C-3)",
+    "team": "common",
+    "area": [
+      "docs",
+      "backend",
+      "ai-server"
+    ],
+    "priority": "must",
+    "week": 1,
+    "status": "ready",
+    "depends_on": [],
+    "requirements": [
+      "NFR-INT-03",
+      "FR-AI-06",
+      "FR-AI-07",
+      "CP-02",
+      "D-033",
+      "D-040",
+      "D-041"
+    ],
+    "paths": [
+      "docs/api/internal-calc.md",
+      "ai-server/README.md"
+    ],
+    "summary": "Spring 계산 엔진과 ai-server 사이 계약을 먼저 고정한다. /internal/calc 응답(current, changed, diff, display)과 ProblemDetail 기반 오류 형식·코드 표(VALIDATION_FAILED, FIELD_NOT_CHANGEABLE, NO_PLAN, ALREADY_EXCEEDED 등)를 A·B팀이 합의해 한 문서로 둔다. B팀이 목으로 개발을 시작하는 기준이다.",
+    "acceptance": [
+      "Given 월 저축액이 허용 상한을 넘는 요청 When 오류 형식 예시를 보면 Then HTTP 422, code=VALIDATION_FAILED, errors[].field/reason/min/max/unit이 예시 JSON으로 있다",
+      "Given 대화로 바꿀 수 없는 조건(목표 금액) When 계약을 보면 Then FIELD_NOT_CHANGEABLE 코드와 ai-server 동작(입력 수정 안내)이 적혀 있다",
+      "Given 이전 대화의 변경이 있는 상태 When 계약을 보면 Then 기준은 항상 현재 계획이고 변경은 누적하지 않는다(D-041)고 적혀 있다"
+    ],
+    "done_when": [
+      "docs/api/internal-calc.md와 ai-server/README.md 'Spring과의 계약'이 같은 내용으로 갱신됨",
+      "A팀 계산 담당과 B팀 담당이 PR에서 승인함"
+    ],
+    "refs": [
+      "docs/design/b-team-contracts.md C-2, C-3, §5 순서 1·2",
+      "docs/design/alignment.md 2-3"
+    ],
+    "issue": 10
+  },
+  {
+    "id": "T-003",
+    "title": "[contract] planContext 필드 목록과 display 문자열 규칙(C-1a)",
+    "team": "common",
+    "area": [
+      "docs"
+    ],
+    "priority": "must",
+    "week": 1,
+    "status": "ready",
+    "depends_on": [
+      "T-002"
+    ],
+    "requirements": [
+      "FR-AI-02",
+      "NFR-INT-01",
+      "D-030",
+      "CP-04"
+    ],
+    "paths": [
+      "docs/api/plan-context.md",
+      "ai-server/README.md"
+    ],
+    "summary": "LLM에 들어가는 planContext(조건, 결과, display, assumptions)의 필드를 고정한다. 금액 표시 문자열(약 N만원)은 Spring Formatter가 만들고 LLM은 그대로 인용한다. memberId, 로그인 아이디, 월별 시계열은 넣지 않는다.",
+    "acceptance": [
+      "Given planContext 예시 When 필드를 보면 Then memberId와 계정 식별 정보가 없다(D-030)",
+      "Given 세후 예상 자산 값 When display를 보면 Then 'AVG.afterTaxAsset' 같은 키로 Spring이 만든 문자열이 있고 LLM이 반올림하지 않는다",
+      "Given 규칙 밖 필드 When ai-server가 받으면 Then 무시한다고 적혀 있다"
+    ],
+    "done_when": [
+      "docs/api/plan-context.md가 A·B팀 승인",
+      "예시 JSON이 ai-server 테스트 fixture로 쓸 수 있는 형태로 첨부됨"
+    ],
+    "refs": [
+      "docs/design/b-team-contracts.md C-1a, §5 순서 3"
+    ],
+    "issue": 11
+  },
+  {
+    "id": "T-004",
+    "title": "[contract] 프론트-Spring API 계약(로그인·입력·결과·대화·적용) + 목 JSON",
+    "team": "common",
+    "area": [
+      "docs",
+      "frontend"
+    ],
+    "priority": "must",
+    "week": 1,
+    "status": "ready",
+    "depends_on": [
+      "T-002"
+    ],
+    "requirements": [
+      "FR-AI-01",
+      "FR-AI-07",
+      "FR-PLAN-03",
+      "FR-PLAN-04",
+      "FR-AUTH-01",
+      "FR-AUTH-03",
+      "FR-INP-10",
+      "FR-INP-11",
+      "D-046"
+    ],
+    "paths": [
+      "docs/api/frontend-api.md",
+      "frontend/src/mocks/**"
+    ],
+    "summary": "프론트가 부를 REST를 OpenAPI 초안으로 고정하고 고정 JSON 목을 만든다. 로그인·로그아웃, 계획 저장·조회, F-1~F-4(대화), 적용·되돌리기(A-1, A-2)를 포함한다. 함께 정할 것: Spring 모듈 담당(chat=B팀), 적용 API 위치(plan이 chat을 의존하면 순환이므로 plan은 조건값을 받는 서비스만, chatMessageId 적용은 chat 쪽 컨트롤러), 되돌리기 방식(포인터 교체 vs 새 버전), 폴링 간격과 ai 호출 시간 초과 임시값.",
+    "acceptance": [
+      "Given 계약 문서 When 각 엔드포인트를 보면 Then 요청, 응답, 오류 코드(PLAN_CHANGED, STALE_COMPARISON, NOTHING_TO_UNDO, ANSWER_PENDING 등) 예시가 있다",
+      "Given chatMessageId로 적용하는 요청 When 모듈 경계를 보면 Then plan -> chat 의존이 생기지 않는 호출 방향이 적혀 있다",
+      "Given 목 JSON When 프론트가 fetch 래퍼로 부르면 Then 정상, 422, 401, 409 응답을 모두 받을 수 있다"
+    ],
+    "done_when": [
+      "docs/api/frontend-api.md가 A·B팀과 프론트 담당 승인",
+      "frontend/src/mocks에 응답별 JSON이 있음",
+      "backend 의존 방향이 ModularityTests를 깨지 않는 설계임을 문서에 적음"
+    ],
+    "refs": [
+      "docs/design/b-team-contracts.md §3, §4, §5 순서 4~6",
+      "docs/design/alignment.md 2-4"
+    ],
+    "issue": 12
+  },
+  {
+    "id": "T-005",
+    "title": "[front] 프론트 프로젝트 초기 설정",
+    "team": "common",
+    "area": [
+      "frontend"
+    ],
+    "priority": "must",
+    "week": 1,
+    "status": "ready",
+    "depends_on": [],
+    "requirements": [
+      "NFR-CMP-01",
+      "NFR-UI-01",
+      "D-047"
+    ],
+    "paths": [
+      "frontend/package.json",
+      "frontend/index.html",
+      "frontend/src/app/**",
+      "frontend/src/api/**",
+      "frontend/src/styles/**"
+    ],
+    "summary": "frontend/에 프로젝트를 만든다(프레임워크는 팀이 정함, 권장은 Vite + React + TypeScript). 라우팅, 공통 레이아웃(헤더), fetch 래퍼(쿠키 인증, ProblemDetail 파싱, 401이면 로그인으로), 목 모드 전환, 린트·빌드를 갖춘다. 화면 작업이 이 위에서 병렬로 진행되므로 1주차에 끝낸다.",
+    "acceptance": [
+      "Given 새로 clone한 사용자 When 설치 후 개발 서버를 실행하면 Then 빈 레이아웃(헤더 포함)이 뜬다",
+      "Given 목 모드 When API를 부르면 Then frontend/src/mocks의 JSON을 돌려준다",
+      "Given 서버가 401을 돌려줄 때 When fetch 래퍼가 받으면 Then 로그인 경로로 이동한다"
+    ],
+    "done_when": [
+      "프론트 빌드·린트·테스트 명령이 README에 적혀 있고 통과",
+      "frontend/.gitkeep 대신 실제 프로젝트가 올라감"
+    ],
+    "refs": [
+      "docs/srs.md#NFR-UI-01",
+      "docs/design/b-team-contracts.md §3 오류 공통"
+    ],
+    "issue": 13
+  },
+  {
+    "id": "T-006",
+    "title": "[refdata] refdata 모듈 코드(버전 조회, 파라미터 적재 검증)",
+    "team": "A",
+    "area": [
+      "backend"
+    ],
+    "priority": "must",
+    "week": 1,
+    "status": "ready",
+    "depends_on": [],
+    "requirements": [
+      "NFR-INT-02",
+      "FR-DATA-01",
+      "FR-DATA-02",
+      "CP-03"
+    ],
+    "paths": [
+      "backend/src/main/java/com/moeun/backend/refdata/**",
+      "backend/src/test/java/com/moeun/backend/refdata/**"
+    ],
+    "summary": "기준 데이터 모듈을 만든다. data_version 활성 버전 조회, DataVersionService.requireKind, calc_param을 읽는 CalcParamLoader와 필수 키 검증(validateRequiredKeys)을 구현한다. 테이블과 스키마는 이미 schema.sql에 있다.",
+    "acceptance": [
+      "Given 활성 데이터 버전이 있을 때 When 활성 버전을 조회하면 Then 적금·지수·파라미터 버전 3개가 반환된다",
+      "Given 필수 calc_param 키가 빠진 버전 When 활성화를 시도하면 Then validateRequiredKeys가 실패하고 활성화되지 않는다",
+      "Given 종류가 다른 버전 ID When requireKind를 호출하면 Then 예외가 난다"
+    ],
+    "done_when": [
+      "./gradlew test --tests ModularityTests 통과",
+      "./gradlew test 통과(Testcontainers)",
+      "./gradlew checkstyleMain checkstyleTest 통과"
+    ],
+    "refs": [
+      "backend/CLAUDE.md 모듈 표",
+      "db/moved-to-code.md §1",
+      "docs/srs.md#FR-DATA-01"
+    ],
+    "issue": 14
+  },
+  {
+    "id": "T-007",
+    "title": "[refdata] 시드 데이터: S&P500 월별 달러 지수, 적금 12개월 평균금리, calc_param",
+    "team": "A",
+    "area": [
+      "backend",
+      "db"
+    ],
+    "priority": "must",
+    "week": 1,
+    "status": "ready",
+    "depends_on": [
+      "T-006",
+      "T-001"
+    ],
+    "requirements": [
+      "FR-DATA-01",
+      "FR-DATA-02",
+      "D-012",
+      "D-027",
+      "D-034",
+      "TBD-08"
+    ],
+    "paths": [
+      "backend/src/main/resources/seed/**",
+      "backend/src/main/java/com/moeun/backend/refdata/**"
+    ],
+    "summary": "수집 코드 없이 CSV 시드로 데이터를 넣는다. S&P500 월별 달러 지수(최소 10년), 12개월 정기적금 은행별 단순평균 금리, 세율·총보수·기본 비중 같은 calc_param을 하나의 활성 버전으로 적재한다. 자료 이용 가능 여부(TBD-08)가 불확실하면 수동 입력 CSV로 하고 출처를 파일에 적는다.",
+    "acceptance": [
+      "Given 앱을 처음 기동할 때 When 시드를 적재하면 Then 활성 data_version 1세트가 생기고 sp500 최소 120개월이 있다",
+      "Given 시드 CSV에 필수 파라미터 키가 빠졌을 때 When 적재하면 Then 적재가 실패한다",
+      "Given 환율 미반영 데이터 When 가정 보기용 값을 읽으면 Then 달러 지수 기준일이 함께 조회된다(D-027)"
+    ],
+    "done_when": [
+      "./gradlew test 통과",
+      "시드 CSV의 출처와 기준일이 seed/README에 적혀 있음"
+    ],
+    "refs": [
+      "docs/srs.md#FR-DATA-02",
+      "docs/scope-review.md FR-DATA 행(CSV 시드)"
+    ],
+    "issue": 15
+  },
+  {
+    "id": "T-008",
+    "title": "[auth] 로그인과 JWT 발급·검증, 데모 계정",
+    "team": "A",
+    "area": [
+      "backend"
+    ],
+    "priority": "must",
+    "week": 1,
+    "status": "ready",
+    "depends_on": [],
+    "requirements": [
+      "FR-AUTH-01",
+      "FR-AUTH-02",
+      "NFR-SEC-01",
+      "NFR-SEC-02"
+    ],
+    "paths": [
+      "backend/src/main/java/com/moeun/backend/auth/**",
+      "backend/src/main/java/com/moeun/backend/config/security/**",
+      "backend/src/test/java/com/moeun/backend/auth/**"
+    ],
+    "summary": "member 테이블 기반 데모 계정 로그인(회원가입 없음)과 JWT(HttpOnly·Secure·SameSite 쿠키, 만료 30분) 발급·검증, 비밀번호 해시 저장, 미인증 요청 차단(401 ProblemDetail)을 구현한다. memberId는 JWT subject에서만 얻는다.",
+    "acceptance": [
+      "Given 데모 계정 When 올바른 아이디·비밀번호로 로그인하면 Then 200과 쿠키가 발급된다",
+      "Given 틀린 비밀번호 When 로그인하면 Then 401이고 쿠키가 발급되지 않는다",
+      "Given 만료되었거나 없는 토큰 When 보호된 API를 부르면 Then 401 UNAUTHENTICATED이고 요청은 처리되지 않는다",
+      "Given DB의 member 행 When 비밀번호 컬럼을 보면 Then 평문이 아니라 해시다"
+    ],
+    "done_when": [
+      "./gradlew test 통과",
+      "./gradlew test --tests ModularityTests 통과",
+      "./gradlew checkstyleMain checkstyleTest 통과"
+    ],
+    "refs": [
+      "db/decision.md ADR-002 §2-5",
+      "docs/srs.md#FR-AUTH-02"
+    ],
+    "issue": 16
+  },
+  {
+    "id": "T-009",
+    "title": "[plan] ConditionValidator와 rules.yml(입력 범위, 경로별 허용 조건)",
+    "team": "A",
+    "area": [
+      "backend"
+    ],
+    "priority": "must",
+    "week": 1,
+    "status": "ready",
+    "depends_on": [
+      "T-002"
+    ],
+    "requirements": [
+      "CP-02",
+      "CP-07",
+      "FR-INP-09",
+      "FR-INP-04",
+      "FR-INP-06",
+      "D-033",
+      "D-040",
+      "D-045"
+    ],
+    "paths": [
+      "backend/src/main/java/com/moeun/backend/plan/**",
+      "backend/src/main/resources/config/rules.yml",
+      "backend/src/test/java/com/moeun/backend/plan/**"
+    ],
+    "summary": "모든 경로(입력·대안·비교·대화)가 같은 ConditionValidator.validate(path, values)를 거치게 한다. 범위 수치(TBD-09·10)는 rules.yml 임시값으로 두고, CHAT 경로 허용 필드는 월 저축액·비중·적금 금리·기한 4개로 한다(M-2 서버 쪽). 해커톤에서는 목표 기간·월 저축액을 required로 막는다(M-8 일부). 오류는 T-002 형식(ProblemDetail)으로 낸다.",
+    "acceptance": [
+      "Given 월 저축액이 rules.yml 상한을 넘는 값 When 검증하면 Then VALIDATION_FAILED, reason=OUT_OF_RANGE, min/max/unit이 담긴다",
+      "Given 목표 기간이 비어 있는 INPUT_EDIT 요청 When 검증하면 Then reason=REQUIRED로 막힌다(D-045)",
+      "Given CHAT 경로에서 목표 금액을 바꾸는 요청 When 검증하면 Then FIELD_NOT_CHANGEABLE이다(D-040)",
+      "Given 한 번에 바꿀 수 있는 개수를 넘은 요청 When 검증하면 Then 거절된다(CP-07)"
+    ],
+    "done_when": [
+      "./gradlew test 통과",
+      "./gradlew test --tests ModularityTests 통과",
+      "범위 수치가 TBD-09·10 확정 전 임시값임이 rules.yml 주석에 적혀 있음"
+    ],
+    "refs": [
+      "db/moved-to-code.md §1",
+      "docs/design/b-team-contracts.md C-3",
+      "docs/design/alignment.md M-2, M-8"
+    ],
+    "issue": 17
+  },
+  {
+    "id": "T-010",
+    "title": "[docs] 문구표 copy.ko.yml 초기 키와 Spring·ai-server 로더",
+    "team": "common",
+    "area": [
+      "backend",
+      "ai-server",
+      "docs"
+    ],
+    "priority": "must",
+    "week": 1,
+    "status": "ready",
+    "depends_on": [],
+    "requirements": [
+      "CP-05",
+      "CP-06",
+      "D-027",
+      "D-028",
+      "D-029",
+      "FR-RES-07",
+      "NFR-USA-02"
+    ],
+    "paths": [
+      "copy/copy.ko.yml",
+      "backend/src/main/java/com/moeun/backend/config/copy/**",
+      "ai-server/app/core/copy.py",
+      "ai-server/tests/test_copy.py"
+    ],
+    "summary": "고정 문구를 문구표 파일 하나에 두고 두 서버가 읽는 로더를 만든다. 초기 키: 면책(격식체), 과거 수익률 고지 한 줄(D-029), '환율 변동은 반영하지 않았어요'(D-027), 입력 검증 문구, AI 실패 안내, 범위 밖 안내, 목표 초과 안내. 문체는 해요체이고 '추천' 표현은 쓰지 않는다.",
+    "acceptance": [
+      "Given copy.ko.yml When Spring과 ai-server가 같은 키를 읽으면 Then 같은 문구가 나온다",
+      "Given 없는 키 When 읽으면 Then 기동 시 또는 테스트에서 실패한다(조용히 빈 문구가 되지 않음)",
+      "Given 문구표 When '추천' 단어를 검색하면 Then 부정문 외에는 없다(CF-07)"
+    ],
+    "done_when": [
+      "./gradlew test 통과",
+      "uv run pytest 통과",
+      "uv run ruff check . 와 uv run mypy 통과"
+    ],
+    "refs": [
+      "db/moved-to-code.md §4 CP-05",
+      "docs/srs.md#CP-05"
+    ],
+    "issue": 18
+  },
+  {
+    "id": "T-011",
+    "title": "[plan] 계획 저장 서비스(plan_version INSERT, 시작월, revision, PlanChanged)",
+    "team": "A",
+    "area": [
+      "backend"
+    ],
+    "priority": "must",
+    "week": 1,
+    "status": "ready",
+    "depends_on": [
+      "T-009"
+    ],
+    "requirements": [
+      "FR-INP-10",
+      "FR-PLAN-05",
+      "D-013",
+      "D-032",
+      "D-045"
+    ],
+    "paths": [
+      "backend/src/main/java/com/moeun/backend/plan/**",
+      "backend/src/test/java/com/moeun/backend/plan/**"
+    ],
+    "summary": "입력값을 plan_version으로 INSERT하고 plan.current_version_id·revision을 갱신하는 서비스와 PlanChanged 이벤트를 만든다. 최초 저장의 시작월은 요청일이 속한 달(D-032)이고, 이미 시작월이 있으면 입력 수정에서도 그대로 쓴다(D-013). 다른 모듈이 쓸 공개 조회 서비스(현재 계획 조회)도 둔다.",
+    "acceptance": [
+      "Given 계획이 없는 회원이 3월 31일에 저장 When 저장하면 Then calc_start_month가 3월이다",
+      "Given 3월 시작월 계획을 5월에 입력 수정 When 저장하면 Then 새 plan_version의 시작월이 3월 그대로다",
+      "Given revision이 맞지 않는 요청 When 저장하면 Then 0행 갱신이고 현재 상태를 돌려준다(PLAN_CHANGED)",
+      "Given 다른 회원의 plan_version ID When 조회하면 Then 찾을 수 없다(memberId 조건)"
+    ],
+    "done_when": [
+      "./gradlew test 통과",
+      "./gradlew test --tests ModularityTests 통과",
+      "./gradlew checkstyleMain checkstyleTest 통과"
+    ],
+    "refs": [
+      "db/tables.md §2·§3",
+      "docs/srs.md#FR-PLAN-05 수용 기준",
+      "backend/.claude/rules/modulith.md 이벤트 표"
+    ],
+    "issue": 19
+  },
+  {
+    "id": "T-012",
+    "title": "[docs] M-7 db/tables.md calc_run.created_at 설명 정정",
+    "team": "common",
+    "area": [
+      "docs",
+      "db"
+    ],
+    "priority": "must",
+    "week": 1,
+    "status": "ready",
+    "depends_on": [],
+    "requirements": [
+      "D-010",
+      "M-7"
+    ],
+    "paths": [
+      "db/tables.md"
+    ],
+    "summary": "db/tables.md §4의 calc_run.created_at 설명에서 '재로그인 시 최신 데이터로 재계산할지 판단' 문구를 지운다. D-010으로 재로그인 시 재계산하지 않기 때문이다.",
+    "acceptance": [
+      "Given db/tables.md When calc_run.created_at 설명을 보면 Then 최신 데이터 재계산 언급이 없고 같은 버전의 최신 기록을 고르는 용도만 남아 있다"
+    ],
+    "done_when": [
+      "PR 리뷰 승인",
+      "문서 외 변경 없음"
+    ],
+    "refs": [
+      "docs/design/alignment.md 2-5, M-7"
+    ],
+    "issue": 20
+  },
+  {
+    "id": "T-013",
+    "title": "[ai] 대화 조건 4개로 축소(도구 스키마·프롬프트·범위 밖 안내) — M-2",
+    "team": "B",
+    "area": [
+      "ai-server"
+    ],
+    "priority": "must",
+    "week": 1,
+    "status": "ready",
+    "depends_on": [],
+    "requirements": [
+      "FR-AI-06",
+      "FR-AI-09",
+      "CP-07",
+      "D-040",
+      "M-2"
+    ],
+    "paths": [
+      "ai-server/app/llm/agent.py",
+      "ai-server/app/llm/prompts.py",
+      "ai-server/app/schemas.py",
+      "ai-server/tests/test_agent_tools.py"
+    ],
+    "summary": "ai-server의 recalculate 도구 스키마, 시스템 프롬프트, 범위 안내 문구를 월 저축액·비중·적금 금리·기한 4개 조건으로 줄인다(현재 7개). 목표 금액·보유 자산·기존 납입액은 대화로 바꾸지 않고 입력 수정으로 안내한다. 서버(Spring)가 최종으로 거부하므로 ai-server는 형식 검사만 한다.",
+    "acceptance": [
+      "Given 도구 스키마 When 필드를 보면 Then monthlySavingAmount, savingsRatioPct, savingsRateInputPct, targetPeriodMonths 4개뿐이다",
+      "Given '목표 금액을 1억으로' 발화 When 처리하면 Then 계산 도구를 부르지 않고 입력 수정에서 바꾼다고 안내한다",
+      "Given 모호한 발화 When 처리하면 Then 값을 되묻고 비교 결과를 만들지 않는다"
+    ],
+    "done_when": [
+      "uv run pytest 통과",
+      "uv run ruff check . 통과",
+      "uv run mypy 통과"
+    ],
+    "refs": [
+      "docs/design/alignment.md 2-3, M-2",
+      "docs/srs.md#FR-AI-06 수용 기준"
+    ],
+    "issue": 21
+  },
+  {
+    "id": "T-014",
+    "title": "[ai] 누적 금지 프롬프트와 시나리오 테스트 — M-3",
+    "team": "B",
+    "area": [
+      "ai-server"
+    ],
+    "priority": "must",
+    "week": 1,
+    "status": "ready",
+    "depends_on": [
+      "T-013"
+    ],
+    "requirements": [
+      "FR-AI-06",
+      "FR-AI-07",
+      "D-041",
+      "M-3"
+    ],
+    "paths": [
+      "ai-server/app/llm/prompts.py",
+      "ai-server/app/llm/agent.py",
+      "ai-server/tests/test_no_accumulate.py"
+    ],
+    "summary": "history 20개를 LLM에 넘겨도 이번 발화에서 말한 조건만 도구 인자에 넣도록 프롬프트를 고치고, fake 모델 테스트로 '월 50만원 -> 기간도 5년' 시나리오를 고정한다. 비교의 기준은 항상 내 계획이다(D-041).",
+    "acceptance": [
+      "Given 이전 턴에 월 50만원을 비교한 기록 When 사용자가 '기간도 5년으로'라고 말하면 Then 도구 인자에는 targetPeriodMonths만 있고 monthlySavingAmount는 없다",
+      "Given fake 모델이 이전 값을 다시 넣으려 할 때 When assemble이 검사하면 Then 이번 발화에 없는 조건은 제거된다"
+    ],
+    "done_when": [
+      "uv run pytest 통과",
+      "uv run ruff check . 와 uv run mypy 통과"
+    ],
+    "refs": [
+      "docs/srs.md#FR-AI-06 수용 기준(D-041)",
+      "docs/design/alignment.md M-3"
+    ],
+    "issue": 22
+  },
+  {
+    "id": "T-015",
+    "title": "[ai] 계산 응답(current/changed/diff)·검증 오류 소비와 되묻기",
+    "team": "B",
+    "area": [
+      "ai-server"
+    ],
+    "priority": "must",
+    "week": 1,
+    "status": "ready",
+    "depends_on": [
+      "T-002"
+    ],
+    "requirements": [
+      "FR-AI-06",
+      "FR-AI-02",
+      "NFR-INT-03",
+      "CP-02",
+      "D-033"
+    ],
+    "paths": [
+      "ai-server/app/tools/calc.py",
+      "ai-server/app/schemas.py",
+      "ai-server/tests/test_calc_client.py",
+      "ai-server/tests/fakes/**"
+    ],
+    "summary": "CalcClient가 T-002 형식의 응답(diff, display 포함)과 ProblemDetail 오류를 구조화해 받게 하고, 422 VALIDATION_FAILED이면 min·max·unit을 인용해 되묻는다(CLARIFY). fake Calculator로 Spring 없이 테스트한다. ai-server는 범위 수치를 하드코딩하지 않는다.",
+    "acceptance": [
+      "Given Spring이 422 VALIDATION_FAILED(max=10000000)를 돌려줄 때 When 처리하면 Then 최대값을 안내하며 되묻고 messageType=CLARIFY, calcRunId는 null이다",
+      "Given 계산 응답에 diff와 display가 있을 때 When 답변을 만들면 Then 차이 금액은 display 문자열을 그대로 인용한다(AI가 빼기를 하지 않음)",
+      "Given 5xx CALC_FAILED When 처리하면 Then error 코드로 실패 응답을 돌려준다(FR-AI-04)"
+    ],
+    "done_when": [
+      "uv run pytest 통과",
+      "uv run ruff check . 와 uv run mypy 통과"
+    ],
+    "refs": [
+      "docs/design/b-team-contracts.md C-2, C-3",
+      "ai-server/.claude/rules/langchain.md 테스트 규칙"
+    ],
+    "issue": 23
+  },
+  {
+    "id": "T-016",
+    "title": "[rag] RAG 근거 자료 2건 선정과 이용 허락 확인(TBD-08)",
+    "team": "B",
+    "area": [
+      "docs",
+      "ai-server"
+    ],
+    "priority": "must",
+    "week": 1,
+    "status": "ready",
+    "depends_on": [],
+    "requirements": [
+      "FR-AI-03",
+      "FR-AI-10",
+      "NFR-INT-04",
+      "TBD-08",
+      "TBD-31",
+      "D-007",
+      "D-028"
+    ],
+    "paths": [
+      "docs/rag-sources.md",
+      "ai-server/docs/rag-eval.md"
+    ],
+    "summary": "서로 다른 운용사 공시 자료 2건 이상(예: S&P500 추종 ETF 투자설명서)과 금융 교육자료를 고르고, 이용 허락 여부를 확인해 목록으로 남긴다. 불확실하면 투자설명서 PDF 2건으로 한정한다. 이 목록이 적재와 출처 표시 작업의 입력이다.",
+    "acceptance": [
+      "Given 선정 목록 When 보면 Then 운용사가 서로 다른 공시 자료가 2건 이상이고 각 건에 URL·기관·이용 허락 상태가 있다",
+      "Given 이용 허락이 불확실한 자료 When 목록을 보면 Then 적재 대상에서 제외하고 사유를 적었다"
+    ],
+    "done_when": [
+      "docs/rag-sources.md가 팀 승인",
+      "적재 CLI 인자(doc-type, org, org-type, title, url)가 자료마다 적혀 있음"
+    ],
+    "refs": [
+      "ai-server/README.md 문서 적재",
+      "docs/scope-review.md §4 TBD-08"
+    ],
+    "issue": 24
+  },
+  {
+    "id": "T-017",
+    "title": "[calc] 시작월 고정 ConditionResolver와 CalcInput 정정 — M-1",
+    "team": "A",
+    "area": [
+      "backend"
+    ],
+    "priority": "must",
+    "week": 2,
+    "status": "ready",
+    "depends_on": [
+      "T-006",
+      "T-011"
+    ],
+    "requirements": [
+      "D-013",
+      "D-032",
+      "FR-PLAN-05",
+      "FR-INP-10",
+      "M-1"
+    ],
+    "paths": [
+      "backend/src/main/java/com/moeun/backend/calc/CalcInput.java",
+      "backend/src/main/java/com/moeun/backend/calc/application/ConditionResolver.java",
+      "backend/src/test/java/com/moeun/backend/calc/**"
+    ],
+    "summary": "CalcInput.calcStartMonth 주석('재계산할 때는 현재 월')을 고치고, ConditionResolver가 항상 plan_version.calc_start_month를 쓰게 한다. 기본 금리 적용, 비중 규칙(5:5 기본), 변경값 반영도 함께 한다. 적용·되돌리기로 새 버전을 만들 때도 시작월을 복사한다.",
+    "acceptance": [
+      "Given 3월 시작월 계획 When 5월에 대화·비교 재계산을 하면 Then 계산 시작월은 3월이다",
+      "Given 적금 금리를 비운 계획 When 해석하면 Then D-034 기본 금리가 적용되고 isDefaultSavingsRate=true다",
+      "Given 비중을 입력하지 않은 계획 When 해석하면 Then 적금 5 : ETF 5이다(FR-INP-08은 Won't)"
+    ],
+    "done_when": [
+      "./gradlew test 통과",
+      "./gradlew test --tests ModularityTests 통과",
+      "./gradlew checkstyleMain checkstyleTest 통과"
+    ],
+    "refs": [
+      "docs/design/alignment.md 2-4, 2-7, M-1",
+      "db/moved-to-code.md §2 calc_run.applied_*"
+    ],
+    "issue": 25
+  },
+  {
+    "id": "T-018",
+    "title": "[calc] CalcEngine 1: 적금 단리, 세금, 보유 자산, 월별 시계열 골격",
+    "team": "A",
+    "area": [
+      "backend"
+    ],
+    "priority": "must",
+    "week": 2,
+    "status": "ready",
+    "depends_on": [
+      "T-001",
+      "T-007",
+      "T-017"
+    ],
+    "requirements": [
+      "CP-03",
+      "FR-RES-02",
+      "FR-RES-04",
+      "NFR-INT-01",
+      "TBD-04",
+      "TBD-05"
+    ],
+    "paths": [
+      "backend/src/main/java/com/moeun/backend/calc/application/CalcEngine.java",
+      "backend/src/main/java/com/moeun/backend/calc/application/Savings*.java",
+      "backend/src/test/java/com/moeun/backend/calc/**"
+    ],
+    "summary": "T-001 명세대로 적금 단리 이자, 세후 계산, 보유 자산(운용 수익 없이 원금 포함), 월별 납입 시계열을 구현한다. ETF 0%(적금만)일 때 시나리오는 AVG 하나다. 골든 케이스 테스트로 검증한다. 계산 로직을 바꾸면 engine_version을 올린다.",
+    "acceptance": [
+      "Given T-001 적금만 골든 케이스 When CalcEngine.calculate를 실행하면 Then 세후 예상 자산이 골든 값과 원 단위로 일치한다",
+      "Given ETF 0% 계획 When 계산하면 Then scenarios에는 AVG 하나만 있다",
+      "Given 같은 입력과 같은 데이터 버전 When 두 번 계산하면 Then 결과가 같다"
+    ],
+    "done_when": [
+      "./gradlew test 통과(골든 케이스 포함)",
+      "./gradlew checkstyleMain checkstyleTest 통과"
+    ],
+    "refs": [
+      "db/moved-to-code.md §1",
+      "docs/srs.md#CP-03",
+      "backend/.claude/rules/persistence.md"
+    ],
+    "issue": 26
+  },
+  {
+    "id": "T-019",
+    "title": "[calc] CalcEngine 2: ETF 3구간, 목표 대비·달성 판정, 초과 안내, 미지원 분기 차단 — M-8",
+    "team": "A",
+    "area": [
+      "backend"
+    ],
+    "priority": "must",
+    "week": 2,
+    "status": "ready",
+    "depends_on": [
+      "T-018"
+    ],
+    "requirements": [
+      "FR-RES-01",
+      "FR-RES-02",
+      "FR-RES-03",
+      "FR-RES-06",
+      "CP-01",
+      "D-006",
+      "D-045",
+      "M-8"
+    ],
+    "paths": [
+      "backend/src/main/java/com/moeun/backend/calc/application/**",
+      "backend/src/test/java/com/moeun/backend/calc/**"
+    ],
+    "summary": "좋았던 때·평균·나빴던 때 3구간(T-001에서 확정한 방식), 목표 대비 차이와 달성/미달(0원은 달성), 보유 자산 >= 목표면 ALREADY_EXCEEDED를 구현한다. 기한 없음·월 저축액 모름 입력은 조용히 이상한 숫자를 내지 않도록 IllegalArgumentException으로 막는다(M-8). Assumptions에 환율 미반영 등 반영하지 않은 항목을 채운다.",
+    "acceptance": [
+      "Given T-001 ETF 골든 케이스 When 계산하면 Then 3구간 값이 골든 값과 일치한다",
+      "Given 목표 대비 차이가 정확히 0원 When 판정하면 Then 달성이다",
+      "Given 보유 자산이 목표 금액 이상 When 계산하면 Then CalcStatus.ALREADY_EXCEEDED이고 시나리오 계산을 하지 않는다",
+      "Given targetPeriodMonths가 null인 입력 When 엔진에 넣으면 Then IllegalArgumentException이다(해커톤 범위 밖 분기)"
+    ],
+    "done_when": [
+      "./gradlew test 통과",
+      "./gradlew checkstyleMain checkstyleTest 통과"
+    ],
+    "refs": [
+      "docs/design/alignment.md 2-6, 2-7, M-8",
+      "docs/srs.md#FR-RES-03, FR-RES-01"
+    ],
+    "issue": 27
+  },
+  {
+    "id": "T-020",
+    "title": "[calc] Formatter와 공유 ResultDisplayBuilder: 약 N만원, 달성/미달 라벨, n년 n개월, 적금 a : ETF b, display 맵",
+    "team": "A",
+    "area": [
+      "backend"
+    ],
+    "priority": "must",
+    "week": 2,
+    "status": "ready",
+    "depends_on": [
+      "T-001",
+      "T-010"
+    ],
+    "requirements": [
+      "CP-04",
+      "TBD-16"
+    ],
+    "paths": [
+      "backend/src/main/java/com/moeun/backend/calc/application/Formatter.java",
+      "backend/src/main/java/com/moeun/backend/calc/application/ResultDisplayBuilder.java",
+      "backend/src/test/java/com/moeun/backend/calc/FormatterTest.java",
+      "backend/src/test/java/com/moeun/backend/calc/ResultDisplayBuilderTest.java"
+    ],
+    "summary": "CP-04 표시 형식을 Spring 한 곳에서 만든다. 금액은 천 단위 반올림 후 '약 N만원', 목표 대비는 부호와 달성/미달, 기간은 'n년 n개월', 비중은 정수 백분율이다. 판정에 쓰는 값은 T-001에서 정한 기준(TBD-16)을 따르고 판정과 표시가 어긋나는 경계 테스트를 둔다.",
+    "acceptance": [
+      "Given 28,704,000원 When 포맷하면 Then 약 2,870만원이다",
+      "Given 3천 원 부족한 결과 When 판정과 표시를 보면 Then 판정은 TBD-16 기준에 따르고 표시와 모순되지 않는다(경계 테스트)",
+      "Given 38개월 When 기간을 포맷하면 Then 3년 2개월이다"
+    ],
+    "done_when": [
+      "./gradlew test 통과",
+      "./gradlew checkstyleMain checkstyleTest 통과"
+    ],
+    "refs": [
+      "docs/srs.md#CP-04",
+      "db/moved-to-code.md §4"
+    ],
+    "issue": 28
+  },
+  {
+    "id": "T-021",
+    "title": "[calc] calc_run 기록, PlanChanged 수신, 데이터 버전 기록, 결과 조회 서비스",
+    "team": "A",
+    "area": [
+      "backend"
+    ],
+    "priority": "must",
+    "week": 2,
+    "status": "ready",
+    "depends_on": [
+      "T-011",
+      "T-019"
+    ],
+    "requirements": [
+      "NFR-INT-02",
+      "FR-PLAN-05",
+      "FR-RES-06",
+      "D-045"
+    ],
+    "paths": [
+      "backend/src/main/java/com/moeun/backend/calc/**",
+      "backend/src/test/java/com/moeun/backend/calc/**"
+    ],
+    "summary": "plan.PlanChanged를 받아 calc_run(PLAN)을 기록하고(같은 이벤트를 두 번 받아도 결과 동일), 결과와 함께 금리·지수·파라미터 버전 3종과 engine_version을 남긴다. 현재 계획의 결과를 조회하는 공개 서비스를 만든다(기록이 늦으면 다시 계산해 기록). 결과는 저장하지 않고 calc_run의 버전으로 다시 계산한다.",
+    "acceptance": [
+      "Given PlanChanged 이벤트 When 처리하면 Then calc_run(PLAN) 1행이 기록되고 버전 3종이 채워진다",
+      "Given 같은 이벤트가 두 번 도착 When 처리하면 Then calc_run이 중복되지 않는다",
+      "Given calc_run 기록이 아직 없는 새 버전 When 결과를 조회하면 Then 다시 계산해 기록하고 결과를 돌려준다"
+    ],
+    "done_when": [
+      "./gradlew test 통과",
+      "./gradlew test --tests ModularityTests 통과",
+      "./gradlew checkstyleMain checkstyleTest 통과"
+    ],
+    "refs": [
+      "backend/.claude/rules/modulith.md 이벤트 표",
+      "db/decision.md ADR-002"
+    ],
+    "issue": 29
+  },
+  {
+    "id": "T-022",
+    "title": "[calc] 결과 보기 API: 검증 -> 저장 -> 계산 -> 결과 응답",
+    "team": "A",
+    "area": [
+      "backend"
+    ],
+    "priority": "must",
+    "week": 2,
+    "status": "ready",
+    "depends_on": [
+      "T-009",
+      "T-011",
+      "T-019",
+      "T-020",
+      "T-021"
+    ],
+    "requirements": [
+      "FR-INP-09",
+      "FR-INP-10",
+      "FR-INP-03",
+      "FR-INP-05",
+      "FR-INP-07",
+      "FR-RES-01",
+      "FR-RES-05",
+      "FR-RES-06",
+      "FR-RES-07"
+    ],
+    "paths": [
+      "backend/src/main/java/com/moeun/backend/plan/web/**",
+      "backend/src/main/java/com/moeun/backend/calc/web/**",
+      "backend/src/test/java/com/moeun/backend/plan/**"
+    ],
+    "summary": "프론트의 '결과 보기'가 부르는 API(T-004 계약)를 구현한다. 모든 입력을 ConditionValidator로 검증하고, 통과하면 계획을 저장하고 계산해 결과(시나리오, 월별 시계열, display, assumptions, 면책·고지 문구 키)를 돌려준다. 보유 자산이 목표 이상이면 계산 없이 초과 안내를 돌려준다.",
+    "acceptance": [
+      "Given 올바른 입력 When 결과 보기를 요청하면 Then 계획이 저장되고 결과가 응답된다",
+      "Given 범위 밖 월 저축액 When 요청하면 Then 422 VALIDATION_FAILED이고 계획은 저장되지 않는다",
+      "Given 보유 자산 >= 목표 When 요청하면 Then 초과 안내 응답이다(FR-RES-01)",
+      "Given 적금 금리를 비운 요청 When 응답을 보면 Then 기본 금리가 적용됐다는 표시와 기준월이 있다"
+    ],
+    "done_when": [
+      "./gradlew test 통과",
+      "./gradlew openapi3 이 성공하고 계약과 일치",
+      "./gradlew checkstyleMain checkstyleTest 통과"
+    ],
+    "refs": [
+      "docs/design/b-team-contracts.md §3",
+      "docs/srs.md#FR-INP-10"
+    ],
+    "issue": 30
+  },
+  {
+    "id": "T-023",
+    "title": "[calc] 현재 계획 조회 API: 로그인 후 진입 분기와 입력값 유지",
+    "team": "A",
+    "area": [
+      "backend"
+    ],
+    "priority": "must",
+    "week": 2,
+    "status": "ready",
+    "depends_on": [
+      "T-022",
+      "T-011",
+      "T-020",
+      "T-021"
+    ],
+    "requirements": [
+      "FR-PLAN-06",
+      "FR-INP-11",
+      "FR-PLAN-05",
+      "FR-INP-05",
+      "D-035",
+      "D-045"
+    ],
+    "paths": [
+      "backend/src/main/java/com/moeun/backend/plan/web/**",
+      "backend/src/test/java/com/moeun/backend/plan/**"
+    ],
+    "summary": "현재 계획과 결과를 조회하는 API를 만든다. 계획이 있으면 결과 화면용 데이터, 없으면 빈 입력으로 이동하라는 응답을 준다(오래된 계획 질문은 하지 않음, D-045). 입력 수정용으로 저장된 값을 돌려주고, 재로그인 후 보유 자산 안내 문구 키('시작월 당시 쓸 수 있던 돈', D-035)를 함께 준다. '결과반영' 버튼은 만들지 않는다.",
+    "acceptance": [
+      "Given 저장된 계획이 있는 계정 When 현재 계획을 조회하면 Then 시작월과 입력값과 결과가 저장한 그대로 온다",
+      "Given 저장된 계획이 없는 계정 When 조회하면 Then 빈 입력 화면 응답이고 시작월을 만들지 않는다",
+      "Given 6개월 전 시작월 계획 When 조회하면 Then 오래된 계획 질문 없이 결과가 온다(D-045)"
+    ],
+    "done_when": [
+      "./gradlew test 통과",
+      "./gradlew checkstyleMain checkstyleTest 통과"
+    ],
+    "refs": [
+      "docs/srs.md#FR-PLAN-06 수용 기준(D-045)",
+      "docs/srs.md#FR-PLAN-05"
+    ],
+    "issue": 31
+  },
+  {
+    "id": "T-024",
+    "title": "[calc] POST /internal/calc: CalcComparison, diff, display, 검증 오류",
+    "team": "A",
+    "area": [
+      "backend"
+    ],
+    "priority": "must",
+    "week": 2,
+    "status": "ready",
+    "depends_on": [
+      "T-002",
+      "T-003",
+      "T-009",
+      "T-019",
+      "T-020",
+      "T-021"
+    ],
+    "requirements": [
+      "FR-AI-06",
+      "FR-AI-07",
+      "NFR-INT-03",
+      "D-033",
+      "D-041",
+      "D-013"
+    ],
+    "paths": [
+      "backend/src/main/java/com/moeun/backend/calc/web/**",
+      "backend/src/main/java/com/moeun/backend/calc/CalcComparison.java",
+      "backend/src/test/java/com/moeun/backend/calc/web/**"
+    ],
+    "summary": "ai-server가 부르는 내부 계산 API를 T-002 계약대로 만든다. 내부 키 헤더를 검사하고, 현재 계획에 conditionChanges만 얹어 계산해 current, changed, diff(Spring이 뺄셈), display를 돌려주며 calc_run(CHAT)을 기록한다. 이전 변경은 누적하지 않고 시작월은 현재 계획의 값이다. CalcComparison은 이후 비교·대안 기능이 재사용한다.",
+    "acceptance": [
+      "Given 현재 월 30만원 계획 When monthlySavingAmount=500000으로 요청하면 Then current, changed, diff.byScenario가 오고 diff 값은 Spring이 계산한 값이다",
+      "Given 허용 범위 밖 값 When 요청하면 Then 422 VALIDATION_FAILED이고 calc_run은 기록되지 않는다",
+      "Given 계획이 없는 회원 When 요청하면 Then 409 NO_PLAN이다",
+      "Given 내부 키가 없거나 틀림 When 요청하면 Then 401 INVALID_INTERNAL_KEY이다",
+      "Given 5월에 요청 When 3월 시작월 계획을 계산하면 Then 시작월은 3월이다"
+    ],
+    "done_when": [
+      "./gradlew test 통과",
+      "./gradlew test --tests ModularityTests 통과",
+      "T-002 계약 예시 JSON과 응답이 일치(계약 테스트)",
+      "./gradlew checkstyleMain checkstyleTest 통과"
+    ],
+    "refs": [
+      "docs/design/b-team-contracts.md C-2, C-3, A-0, A-0b",
+      "docs/srs.md#FR-AI-06"
+    ],
+    "issue": 32
+  },
+  {
+    "id": "T-025",
+    "title": "[plan] 적용·되돌리기 서비스와 되돌리기 REST(POST /api/plan/undo)",
+    "team": "A",
+    "area": [
+      "backend"
+    ],
+    "priority": "must",
+    "week": 2,
+    "status": "ready",
+    "depends_on": [
+      "T-004",
+      "T-011",
+      "T-021",
+      "T-012"
+    ],
+    "requirements": [
+      "FR-PLAN-03",
+      "FR-PLAN-04",
+      "D-013",
+      "D-016",
+      "D-041",
+      "D-044"
+    ],
+    "paths": [
+      "backend/src/main/java/com/moeun/backend/plan/**",
+      "backend/src/test/java/com/moeun/backend/plan/**"
+    ],
+    "summary": "조건 변경값을 받아 새 plan_version을 만들고 current/previous를 갱신하는 PlanApplyService와, 직전 1개로 돌아가는 되돌리기를 구현한다. 모두 expectedRevision으로 낙관적 락을 걸고 시작월은 복사한다. chatMessageId로 적용하는 컨트롤러는 모듈 순환을 피하려고 chat 모듈(T-037)이 이 서비스를 호출한다.",
+    "acceptance": [
+      "Given revision이 맞는 적용 요청 When 실행하면 Then 새 버전이 생기고 undoAvailable=true이며 시작월은 그대로다",
+      "Given revision이 맞지 않는 요청 When 실행하면 Then 409 PLAN_CHANGED이다",
+      "Given 적용 직후 When 되돌리기를 하면 Then 직전 계획으로 돌아가고 시작월은 그대로다",
+      "Given 되돌릴 이전 버전이 없을 때 When 되돌리기하면 Then 409 NOTHING_TO_UNDO이다",
+      "Given 범위 밖 조건값 When 적용하면 Then 422이고 계획은 바뀌지 않는다(D-033)"
+    ],
+    "done_when": [
+      "./gradlew test 통과",
+      "./gradlew test --tests ModularityTests 통과",
+      "./gradlew checkstyleMain checkstyleTest 통과"
+    ],
+    "refs": [
+      "docs/design/b-team-contracts.md A-1, A-2",
+      "docs/srs.md#FR-PLAN-04 수용 기준"
+    ],
+    "issue": 33
+  },
+  {
+    "id": "T-026",
+    "title": "[auth] 로그아웃 엔드포인트와 TokenRenewalFilter, @SkipRenewal — M-6",
+    "team": "A",
+    "area": [
+      "backend"
+    ],
+    "priority": "must",
+    "week": 2,
+    "status": "blocked",
+    "depends_on": [
+      "T-008"
+    ],
+    "requirements": [
+      "FR-AUTH-02",
+      "FR-AUTH-03",
+      "NFR-SEC-02",
+      "D-031",
+      "M-6"
+    ],
+    "paths": [
+      "backend/src/main/java/com/moeun/backend/auth/**",
+      "backend/src/main/java/com/moeun/backend/config/security/**",
+      "backend/src/test/java/com/moeun/backend/auth/**"
+    ],
+    "summary": "Q-042 결정 대기(권장안 A로 진행 가능). 로그아웃은 서버가 쿠키를 만료시키는 POST /api/auth/logout, TokenRenewalFilter는 사용자 조작 요청에만 새 토큰을 발급하고 대화 폴링은 @SkipRenewal로 제외한다. 권장안 A가 아니면(서버 세션으로 변경) 이 작업의 범위가 달라진다.",
+    "acceptance": [
+      "Given 로그인한 사용자 When 로그아웃을 호출하면 Then Max-Age=0 쿠키가 내려오고 이후 요청은 401이다",
+      "Given 마지막 사용자 조작 후 30분이 지난 토큰 When 요청하면 Then 401이다",
+      "Given @SkipRenewal이 붙은 폴링 요청 When 처리하면 Then 새 토큰이 발급되지 않아 만료 시간이 늘지 않는다"
+    ],
+    "done_when": [
+      "./gradlew test 통과",
+      "./gradlew checkstyleMain checkstyleTest 통과"
+    ],
+    "refs": [
+      "docs/design/alignment.md 2-1, 3-2, M-6",
+      "docs/open-questions.md Q-042"
+    ],
+    "issue": 34
+  },
+  {
+    "id": "T-027",
+    "title": "[ai] planContext 기반 설명 모드(EXPLAIN)와 display 인용 규칙",
+    "team": "B",
+    "area": [
+      "ai-server"
+    ],
+    "priority": "must",
+    "week": 2,
+    "status": "ready",
+    "depends_on": [
+      "T-003",
+      "T-013",
+      "T-014",
+      "T-015",
+      "T-010"
+    ],
+    "requirements": [
+      "FR-AI-01",
+      "FR-AI-02",
+      "D-030",
+      "NFR-USA-01"
+    ],
+    "paths": [
+      "ai-server/app/llm/agent.py",
+      "ai-server/app/llm/prompts.py",
+      "ai-server/app/schemas.py",
+      "ai-server/tests/test_explain.py"
+    ],
+    "summary": "mode=EXPLAIN일 때 planContext(T-003)만으로 결과의 의미를 쉬운 말로 설명한다. 금액은 display 문자열을 그대로 인용하고 직접 계산하지 않는다. 계정 식별 정보는 프롬프트에 넣지 않는다.",
+    "acceptance": [
+      "Given planContext 예시 When EXPLAIN을 처리하면 Then 설명의 금액은 display 문자열과 같다",
+      "Given planContext에 없는 값을 묻는 상황 When 답하면 Then 값을 지어내지 않고 모른다고 답한다",
+      "Given 프롬프트 When 내용을 검사하면 Then memberId가 들어 있지 않다"
+    ],
+    "done_when": [
+      "uv run pytest 통과",
+      "uv run ruff check . 와 uv run mypy 통과"
+    ],
+    "refs": [
+      "docs/design/b-team-contracts.md C-1, C-1a",
+      "docs/srs.md#FR-AI-02"
+    ],
+    "issue": 35
+  },
+  {
+    "id": "T-028",
+    "title": "[ai] 본문 상품명·추천 표현 검사 — M-4",
+    "team": "B",
+    "area": [
+      "ai-server"
+    ],
+    "priority": "must",
+    "week": 2,
+    "status": "ready",
+    "depends_on": [
+      "T-013"
+    ],
+    "requirements": [
+      "CP-06",
+      "NFR-USA-02",
+      "D-028",
+      "M-4"
+    ],
+    "paths": [
+      "ai-server/app/llm/assemble.py",
+      "ai-server/app/llm/prompts.py",
+      "ai-server/tests/test_guardrails.py"
+    ],
+    "summary": "프롬프트에 규칙(본문은 'S&P500 추종 ETF'로만, 추천 금지)을 넣고, assemble 단계에서 본문의 상품명(KODEX, TIGER 등)과 '추천' 표현을 검사한다. 출처 링크 텍스트는 제외한다. 걸리면 해당 문구를 고치거나 실패로 처리한다.",
+    "acceptance": [
+      "Given 본문에 'KODEX'가 들어간 모델 출력 When assemble하면 Then 거부되거나 'S&P500 추종 ETF'로 바뀐다",
+      "Given 출처 citation의 제목에 상품명 When assemble하면 Then 출처 제목은 그대로 보존된다(D-028)",
+      "Given '이 상품을 추천해요' 출력 When assemble하면 Then 걸러진다. 단 '추천하지 않아요' 부정문은 통과한다(CF-07)"
+    ],
+    "done_when": [
+      "uv run pytest 통과",
+      "uv run ruff check . 와 uv run mypy 통과"
+    ],
+    "refs": [
+      "docs/design/alignment.md 2-3, M-4",
+      "docs/srs.md#CP-06"
+    ],
+    "issue": 36
+  },
+  {
+    "id": "T-029",
+    "title": "[ai] AI 응답 숫자 자동 대조(NUMBER_MISMATCH) — PR-04",
+    "team": "B",
+    "area": [
+      "ai-server"
+    ],
+    "priority": "must",
+    "week": 2,
+    "status": "ready",
+    "depends_on": [
+      "T-015",
+      "T-027"
+    ],
+    "requirements": [
+      "FR-AI-02",
+      "FR-AI-04",
+      "NFR-INT-01",
+      "PR-04"
+    ],
+    "paths": [
+      "ai-server/app/llm/assemble.py",
+      "ai-server/app/llm/number_check.py",
+      "ai-server/tests/test_number_check.py"
+    ],
+    "summary": "모델이 만든 본문 속 금액·기간 표현을 planContext와 계산 응답의 값과 대조하고, 근거 없는 숫자가 있으면 AgentError(NUMBER_MISMATCH)로 실패시킨다. 숫자를 LLM이 만들지 못하게 하는 마지막 안전장치다.",
+    "acceptance": [
+      "Given 본문 금액이 display 값과 같을 때 When 대조하면 Then 통과한다",
+      "Given 본문에 계산 결과에 없는 금액 When 대조하면 Then NUMBER_MISMATCH 오류로 응답이 실패한다",
+      "Given 숫자가 없는 일반 설명 When 대조하면 Then 통과한다"
+    ],
+    "done_when": [
+      "uv run pytest 통과",
+      "uv run ruff check . 와 uv run mypy 통과"
+    ],
+    "refs": [
+      "docs/design/alignment.md 2-3",
+      "docs/srs.md#FR-AI-02"
+    ],
+    "issue": 37
+  },
+  {
+    "id": "T-030",
+    "title": "[ai] 범위 밖 질문 3유형 분류와 안내 문구를 문구표로 이전 — M-5",
+    "team": "B",
+    "area": [
+      "ai-server"
+    ],
+    "priority": "must",
+    "week": 2,
+    "status": "ready",
+    "depends_on": [
+      "T-010",
+      "T-013"
+    ],
+    "requirements": [
+      "FR-AI-09",
+      "CP-05",
+      "D-045",
+      "M-5"
+    ],
+    "paths": [
+      "ai-server/app/llm/prompts.py",
+      "ai-server/app/llm/agent.py",
+      "ai-server/tests/test_out_of_scope.py"
+    ],
+    "summary": "질문을 '조건 변경 / 설명 / 그 밖' 3유형으로 나누고(D-045), 그 밖이면 계산 없이 OUT_OF_SCOPE로 안내한 뒤 바꿀 수 있는 4개 조건을 알려준다. 하드코딩된 OUT_OF_SCOPE_COPY를 copy.ko.yml 키로 옮긴다. 개별주식 질문도 다루지 않는다고 안내한다.",
+    "acceptance": [
+      "Given '삼성전자 주식 사면 어때요' 질문 When 처리하면 Then calcRunId 없이 OUT_OF_SCOPE이고 문구는 문구표 키에서 온다",
+      "Given '이 ETF가 뭐예요' 설명 질문 When 처리하면 Then 계산 없이 ANSWER로 근거를 인용해 답한다",
+      "Given 코드 When 검색하면 Then OUT_OF_SCOPE_COPY 하드코딩 문구가 없다"
+    ],
+    "done_when": [
+      "uv run pytest 통과",
+      "uv run ruff check . 와 uv run mypy 통과"
+    ],
+    "refs": [
+      "docs/design/alignment.md M-5",
+      "docs/srs.md#FR-AI-09"
+    ],
+    "issue": 38
+  },
+  {
+    "id": "T-031",
+    "title": "[rag] RAG 근거 자료 적재와 검색 품질 점검",
+    "team": "B",
+    "area": [
+      "ai-server"
+    ],
+    "priority": "must",
+    "week": 2,
+    "status": "ready",
+    "depends_on": [
+      "T-016"
+    ],
+    "requirements": [
+      "FR-AI-10",
+      "NFR-INT-04",
+      "FR-AI-03"
+    ],
+    "paths": [
+      "ai-server/docs/rag-eval.md",
+      "ai-server/tests/test_rag_search.py",
+      "scripts/ingest/**"
+    ],
+    "summary": "T-016 목록의 자료를 기존 moeun-ingest CLI로 적재하고 대표 질문 10개 정도로 검색 품질(관련 chunk가 상위에 오는지)을 점검한다. 적재 절차를 스크립트로 남겨 데모 환경에서 다시 할 수 있게 한다.",
+    "acceptance": [
+      "Given 적재 완료 When 'ETF 위험' 질문으로 /rag/search를 부르면 Then 서로 다른 운용사 문서가 상위 결과에 섞여 나온다",
+      "Given 같은 문서를 다시 적재 When CLI를 실행하면 Then 중복 행이 생기지 않는다",
+      "Given 이용 허락이 없는 자료 When 적재를 시도하면 Then 적재되지 않는다"
+    ],
+    "done_when": [
+      "uv run pytest 통과",
+      "docs/rag-eval.md에 점검 결과가 기록됨"
+    ],
+    "refs": [
+      "ai-server/README.md 문서 적재",
+      "docs/srs.md#NFR-INT-04"
+    ],
+    "issue": 39
+  },
+  {
+    "id": "T-032",
+    "title": "[ai] ETF 위험 설명의 근거 인용: 서로 다른 운용사 출처 2개 이상",
+    "team": "B",
+    "area": [
+      "ai-server"
+    ],
+    "priority": "must",
+    "week": 2,
+    "status": "ready",
+    "depends_on": [
+      "T-027",
+      "T-031"
+    ],
+    "requirements": [
+      "FR-AI-03",
+      "FR-AI-10",
+      "D-028"
+    ],
+    "paths": [
+      "ai-server/app/llm/agent.py",
+      "ai-server/app/rag/**",
+      "ai-server/tests/test_citations.py"
+    ],
+    "summary": "ETF 위험을 설명할 때 RAG 검색을 하고 서로 다른 운용사 출처 2개 이상의 chunk를 citationChunkIds에 담는다(diversify_orgs). 인용은 이번 요청에서 실제 검색된 chunk만 넣는다. 본문은 상품명 대신 'S&P500 추종 ETF'로 쓴다.",
+    "acceptance": [
+      "Given ETF 위험을 묻는 질문 When 답하면 Then citationChunkIds에 서로 다른 org의 chunk가 2개 이상이다",
+      "Given 검색되지 않은 chunk ID When 응답을 보정하면 Then 인용에서 제거된다",
+      "Given 출처가 1곳뿐인 검색 결과 When 답하면 Then 가능한 만큼만 인용하고 거짓으로 채우지 않는다"
+    ],
+    "done_when": [
+      "uv run pytest 통과",
+      "uv run ruff check . 와 uv run mypy 통과"
+    ],
+    "refs": [
+      "docs/srs.md#FR-AI-03",
+      "ai-server/CLAUDE.md 절대 원칙 3"
+    ],
+    "issue": 40
+  },
+  {
+    "id": "T-033",
+    "title": "[chat] Spring chat 모듈 기반 + F-1 질문 전송 + ai-server 비동기 호출",
+    "team": "B",
+    "area": [
+      "backend"
+    ],
+    "priority": "must",
+    "week": 2,
+    "status": "ready",
+    "depends_on": [
+      "T-004",
+      "T-008",
+      "T-010"
+    ],
+    "requirements": [
+      "FR-AI-01",
+      "FR-AI-04",
+      "NFR-INT-03",
+      "D-030",
+      "D-046"
+    ],
+    "paths": [
+      "backend/src/main/java/com/moeun/backend/chat/**",
+      "backend/src/test/java/com/moeun/backend/chat/**"
+    ],
+    "summary": "chat 모듈의 엔티티·리포지토리와 POST /api/chat/messages(USER와 ASSISTANT PENDING 저장, 202)를 만든다. ChatAnswerRequested 이벤트를 받아 ai-server POST /chat을 호출하고 COMPLETED/FAILED로 갱신하며, 시간 초과(임시 30초)나 4xx/5xx이면 FAILED·FAILURE와 문구표 실패 안내를 기록한다. history는 최근 20개이며 보관 방식은 Q-041 결정에 따라 T-038에서 조정한다. 이전 답이 PENDING이면 409 ANSWER_PENDING이다.",
+    "acceptance": [
+      "Given 로그인한 회원 When 질문을 보내면 Then 202와 userMessageId, assistantMessageId, status=PENDING이 온다",
+      "Given ai-server가 {error:'BAD_OUTPUT'}를 돌려줄 때 When 처리하면 Then 메시지가 FAILED, messageType=FAILURE가 되고 계산 결과 화면은 영향받지 않는다(FR-AI-04)",
+      "Given ai 호출이 30초를 넘길 때 When 시간 초과가 나면 Then FAILED로 바뀐다",
+      "Given 이전 ASSISTANT 답이 PENDING 때 When 새 질문을 보내면 Then 409 ANSWER_PENDING이다",
+      "Given 2000자를 넘는 질문 When 보내면 Then 422이다"
+    ],
+    "done_when": [
+      "./gradlew test 통과(ai-server는 스텁 서버)",
+      "./gradlew test --tests ModularityTests 통과",
+      "./gradlew checkstyleMain checkstyleTest 통과"
+    ],
+    "refs": [
+      "docs/design/b-team-contracts.md F-1, C-1",
+      "backend/.claude/rules/modulith.md 이벤트 표"
+    ],
+    "issue": 41
+  },
+  {
+    "id": "T-034",
+    "title": "[chat] F-2 메시지 폴링 + 출처(citations) 조회",
+    "team": "B",
+    "area": [
+      "backend"
+    ],
+    "priority": "must",
+    "week": 2,
+    "status": "ready",
+    "depends_on": [
+      "T-033",
+      "T-026"
+    ],
+    "requirements": [
+      "FR-AI-01",
+      "FR-AI-03",
+      "FR-AI-04",
+      "D-028"
+    ],
+    "paths": [
+      "backend/src/main/java/com/moeun/backend/chat/**",
+      "backend/src/test/java/com/moeun/backend/chat/**"
+    ],
+    "summary": "GET /api/chat/messages?afterId=를 구현한다. PENDING이면 content는 null, FAILED면 문구표 실패 안내를 준다. COMPLETED에는 rag 모듈 서비스로 조회한 citations(제목, URL, 기관)를 붙인다. 이 엔드포인트는 @SkipRenewal로 토큰 만료 연장에서 제외한다(T-026의 어노테이션 사용, Q-042 권장안 A).",
+    "acceptance": [
+      "Given PENDING 메시지 When 폴링하면 Then status=PENDING이고 content는 null이다",
+      "Given 출처가 있는 COMPLETED 메시지 When 폴링하면 Then citations에 제목·URL·기관이 순서대로 온다",
+      "Given 다른 회원의 메시지 When 조회하면 Then 보이지 않는다",
+      "Given 폴링만 30분 계속 When 토큰을 보면 Then 만료가 연장되지 않는다"
+    ],
+    "done_when": [
+      "./gradlew test 통과",
+      "./gradlew test --tests ModularityTests 통과",
+      "./gradlew checkstyleMain checkstyleTest 통과"
+    ],
+    "refs": [
+      "docs/design/b-team-contracts.md F-2"
+    ],
+    "issue": 42
+  },
+  {
+    "id": "T-035",
+    "title": "[chat] F-3 설명 요청 POST /api/chat/explanations",
+    "team": "B",
+    "area": [
+      "backend"
+    ],
+    "priority": "must",
+    "week": 2,
+    "status": "ready",
+    "depends_on": [
+      "T-033",
+      "T-021",
+      "T-064"
+    ],
+    "requirements": [
+      "FR-AI-01",
+      "FR-AI-02",
+      "FR-AI-04"
+    ],
+    "paths": [
+      "backend/src/main/java/com/moeun/backend/chat/**",
+      "backend/src/test/java/com/moeun/backend/chat/**"
+    ],
+    "summary": "결과 화면이 계산 결과를 그린 뒤 프론트가 부르는 설명 요청을 만든다. calcRunId가 그 회원의 PLAN 기록인지 확인하고, planContext(T-003)를 만들어 ai-server를 mode=EXPLAIN으로 부른다. 설명이 실패해도 결과 화면은 영향이 없다.",
+    "acceptance": [
+      "Given 내 계획의 calcRunId When 설명을 요청하면 Then 202와 assistantMessageId가 오고 EXPLANATION 메시지가 PENDING으로 생긴다",
+      "Given 남의 calcRunId When 요청하면 Then 404 NOT_FOUND이다",
+      "Given planContext When ai-server로 보내면 Then memberId와 계정 정보가 포함되지 않는다"
+    ],
+    "done_when": [
+      "./gradlew test 통과",
+      "./gradlew test --tests ModularityTests 통과",
+      "./gradlew checkstyleMain checkstyleTest 통과"
+    ],
+    "refs": [
+      "docs/design/b-team-contracts.md F-3, C-1a"
+    ],
+    "issue": 43
+  },
+  {
+    "id": "T-036",
+    "title": "[chat] F-4 비교 결과 조회와 applicable 판정",
+    "team": "B",
+    "area": [
+      "backend"
+    ],
+    "priority": "must",
+    "week": 2,
+    "status": "ready",
+    "depends_on": [
+      "T-024",
+      "T-034",
+      "T-013",
+      "T-064",
+      "T-011"
+    ],
+    "requirements": [
+      "FR-AI-07",
+      "D-022",
+      "D-041"
+    ],
+    "paths": [
+      "backend/src/main/java/com/moeun/backend/chat/**",
+      "backend/src/test/java/com/moeun/backend/chat/**"
+    ],
+    "summary": "GET /api/chat/messages/{id}/comparison을 구현한다. RECALC_RESULT 메시지에서 condition_changes와 calc_run 버전으로 current·changed·diff를 다시 계산해 돌려준다(저장하지 않음). applicable은 회원의 가장 최근 RECALC_RESULT이고 기준 plan_version이 현재 계획과 같을 때만 true다. 그래프 시계열은 넣지 않는다.",
+    "acceptance": [
+      "Given 가장 최근 RECALC_RESULT When 조회하면 Then current, changed, diff, applicable=true이다",
+      "Given 비교 결과가 두 개 있을 때 When 첫 번째를 조회하면 Then applicable=false이다(D-041)",
+      "Given RECALC_RESULT가 아닌 메시지 When 조회하면 Then 404이다",
+      "Given 그 사이 계획이 바뀐 경우 When 조회하면 Then applicable=false이다"
+    ],
+    "done_when": [
+      "./gradlew test 통과",
+      "./gradlew test --tests ModularityTests 통과",
+      "./gradlew checkstyleMain checkstyleTest 통과"
+    ],
+    "refs": [
+      "docs/design/b-team-contracts.md F-4",
+      "docs/srs.md#FR-AI-07 수용 기준"
+    ],
+    "issue": 44
+  },
+  {
+    "id": "T-037",
+    "title": "[chat] 대화 '내 계획으로 적용' 엔드포인트(chatMessageId, 재검증, 확인창 없음)",
+    "team": "B",
+    "area": [
+      "backend"
+    ],
+    "priority": "must",
+    "week": 2,
+    "status": "ready",
+    "depends_on": [
+      "T-025",
+      "T-036",
+      "T-013"
+    ],
+    "requirements": [
+      "FR-AI-07",
+      "FR-PLAN-03",
+      "FR-PLAN-04",
+      "D-016",
+      "D-033",
+      "D-041",
+      "D-046"
+    ],
+    "paths": [
+      "backend/src/main/java/com/moeun/backend/chat/web/**",
+      "backend/src/main/java/com/moeun/backend/chat/application/**",
+      "backend/src/test/java/com/moeun/backend/chat/**"
+    ],
+    "summary": "대화창 적용 요청을 받아 chat_message.condition_changes를 읽고 다시 검증한 뒤 A팀의 PlanApplyService를 호출한다(source=CHAT). 화면에서 값을 다시 받지 않아 범위 밖 값이 들어올 길이 없다. 가장 최근 비교가 아니면 409 STALE_COMPARISON이고, 성공하면 되돌리기 가능 응답을 준다.",
+    "acceptance": [
+      "Given 가장 최근 비교 결과 When 적용하면 Then 확인창 없이 새 plan_version(source=CHAT)이 생기고 시작월은 그대로다",
+      "Given 이전(최신이 아닌) 비교 결과 When 적용하면 Then 409 STALE_COMPARISON이다",
+      "Given 저장된 변경값이 이후 범위 규칙에서 벗어난 경우 When 적용하면 Then 422이고 계획은 바뀌지 않는다",
+      "Given revision 불일치 When 적용하면 Then 409 PLAN_CHANGED이다"
+    ],
+    "done_when": [
+      "./gradlew test 통과",
+      "./gradlew test --tests ModularityTests 통과(plan이 chat을 의존하지 않음)",
+      "./gradlew checkstyleMain checkstyleTest 통과"
+    ],
+    "refs": [
+      "docs/design/b-team-contracts.md A-1",
+      "docs/srs.md#FR-AI-07 수용 기준"
+    ],
+    "issue": 45
+  },
+  {
+    "id": "T-038",
+    "title": "[chat] 대화 기록 삭제: 로그인·로그아웃 때 이전 대화 삭제",
+    "team": "B",
+    "area": [
+      "backend"
+    ],
+    "priority": "must",
+    "week": 2,
+    "status": "blocked",
+    "depends_on": [
+      "T-033",
+      "T-008",
+      "T-026"
+    ],
+    "requirements": [
+      "NFR-INT-03",
+      "D-030",
+      "FR-AI-01"
+    ],
+    "paths": [
+      "backend/src/main/java/com/moeun/backend/chat/application/**",
+      "backend/src/main/java/com/moeun/backend/auth/LoggedIn.java",
+      "backend/src/test/java/com/moeun/backend/chat/**"
+    ],
+    "summary": "Q-041 결정 대기(권장안 A로 진행 가능). 권장안 A는 로그인 때 그 계정의 이전 대화를 지우고 로그아웃에서도 지우는 것이다. auth가 이벤트(LoggedIn, LoggedOut)를 발행하고 chat이 받아 chat_message와 citation을 삭제한다. 결정이 B(계속 보관)로 나면 삭제를 빼고 이전 대화 복원 UI가 필요해 범위가 달라진다.",
+    "acceptance": [
+      "Given 이전 대화가 있는 회원 When 다시 로그인하면 Then 그 회원의 이전 chat_message가 없다",
+      "Given 다른 회원의 대화 When 내가 로그인하면 Then 남의 대화는 지워지지 않는다",
+      "Given 이벤트가 두 번 도착 When 삭제하면 Then 결과가 같다(멱등)"
+    ],
+    "done_when": [
+      "./gradlew test 통과",
+      "./gradlew test --tests ModularityTests 통과(auth가 chat을 의존하지 않고 이벤트로 푼다)",
+      "./gradlew checkstyleMain checkstyleTest 통과"
+    ],
+    "refs": [
+      "docs/design/alignment.md 3-1",
+      "docs/open-questions.md Q-041"
+    ],
+    "issue": 46
+  },
+  {
+    "id": "T-039",
+    "title": "[front] 로그인 화면, 라우팅 가드, 헤더 로그아웃",
+    "team": "A",
+    "area": [
+      "frontend"
+    ],
+    "priority": "must",
+    "week": 2,
+    "status": "ready",
+    "depends_on": [
+      "T-004",
+      "T-005"
+    ],
+    "requirements": [
+      "FR-AUTH-01",
+      "FR-AUTH-02",
+      "FR-AUTH-03"
+    ],
+    "paths": [
+      "frontend/src/features/auth/**",
+      "frontend/src/app/routes/**"
+    ],
+    "summary": "데모 계정 로그인 화면(회원가입 없음), 비로그인 접근 차단, 401이면 로그인으로 이동, 모든 로그인 화면 헤더의 로그아웃 버튼을 만든다. 처음에는 목 모드로 개발한다. 로그인 직후 계획이 있으면 결과 화면, 없으면 빈 입력 화면으로 보낸다.",
+    "acceptance": [
+      "Given 비로그인 사용자 When 입력·결과 주소로 가면 Then 로그인 화면으로 간다",
+      "Given 로그인 실패 When 제출하면 Then 오류 문구가 보이고 이동하지 않는다",
+      "Given 로그인한 사용자 When 어느 화면에서든 헤더의 로그아웃을 누르면 Then 로그인 화면으로 간다",
+      "Given 만료된 세션 When 요청이 401이면 Then 로그인 화면으로 이동한다"
+    ],
+    "done_when": [
+      "프론트 빌드·린트·테스트(T-005 README의 명령) 통과",
+      "목 모드에서 위 시나리오가 동작"
+    ],
+    "refs": [
+      "docs/srs.md#FR-AUTH-02 수용 기준",
+      "docs/srs.md#FR-PLAN-06"
+    ],
+    "issue": 47
+  },
+  {
+    "id": "T-040",
+    "title": "[front] 입력 화면(목표 종류·금액·기간·보유 자산·월 저축액·적금 금리) + 검증 오류",
+    "team": "A",
+    "area": [
+      "frontend"
+    ],
+    "priority": "must",
+    "week": 2,
+    "status": "ready",
+    "depends_on": [
+      "T-004",
+      "T-005"
+    ],
+    "requirements": [
+      "FR-INP-01",
+      "FR-INP-03",
+      "FR-INP-04",
+      "FR-INP-05",
+      "FR-INP-06",
+      "FR-INP-07",
+      "FR-INP-09",
+      "NFR-USA-01",
+      "D-045"
+    ],
+    "paths": [
+      "frontend/src/features/input/**"
+    ],
+    "summary": "목표 종류 1개 선택 후 다음 질문이 보이고(고르기 전에는 숨김), 목표 금액·목표 기간(n년 n개월)·보유 자산·월 저축 가능 금액을 필수로, 적금 금리를 선택으로 받는 화면이다. '정하지 않음', '잘 모르겠어요' 선택지는 만들지 않는다(D-045). 만원 단위 입력을 원 단위로 변환하고 서버 422 오류를 필드별로 보여준다. 이전 계획이 있으면 값이 채워진다.",
+    "acceptance": [
+      "Given 목표 종류를 고르지 않은 상태 When 화면을 보면 Then 다음 질문이 보이지 않는다",
+      "Given 목표 기간이 비어 있음 When 결과 보기를 누르면 Then 기간 입력을 요구하고 이동하지 않는다(D-045)",
+      "Given 서버가 월 저축액 OUT_OF_RANGE(min, max)를 돌려줌 When 응답을 받으면 Then 해당 칸 아래에 허용 범위를 안내한다",
+      "Given 50(만원) 입력 When 요청을 보내면 Then 500000(원)으로 전송된다",
+      "Given 적금 금리를 비움 When 제출하면 Then 기본 금리가 적용된다는 안내가 보인다"
+    ],
+    "done_when": [
+      "프론트 빌드·린트·테스트 통과",
+      "목 모드에서 정상·422 응답 화면이 동작"
+    ],
+    "refs": [
+      "docs/srs.md#FR-INP-04, FR-INP-06 수용 기준(D-045)",
+      "docs/design/b-team-contracts.md C-3"
+    ],
+    "issue": 48
+  },
+  {
+    "id": "T-041",
+    "title": "[front] 결과 화면 1: 요약, 조건 바, 목표 초과 안내, 가정 보기, 면책",
+    "team": "A",
+    "area": [
+      "frontend"
+    ],
+    "priority": "must",
+    "week": 2,
+    "status": "ready",
+    "depends_on": [
+      "T-040",
+      "T-004",
+      "T-005"
+    ],
+    "requirements": [
+      "FR-RES-01",
+      "FR-RES-02",
+      "FR-RES-05",
+      "FR-RES-06",
+      "FR-RES-07",
+      "FR-INP-11",
+      "D-027",
+      "D-038"
+    ],
+    "paths": [
+      "frontend/src/features/result/summary/**",
+      "frontend/src/features/result/assumptions/**"
+    ],
+    "summary": "결과 화면 첫 영역(목표일의 세후 예상 자산, 달성/미달, 목표 대비), 상단 조건 바와 입력 수정 진입점, 가정 보기(펼침, 환율 변동 미반영 문구, 데이터 기준월), 맨 아래 면책 문구(상시)를 만든다. 보유 자산이 목표 이상이면 초과 안내만 보인다. 금액·기간 문자열은 서버 display를 그대로 쓴다.",
+    "acceptance": [
+      "Given 미달 결과 When 화면을 보면 Then 약 N만원 · 미달 라벨이 보인다",
+      "Given 보유 자산 >= 목표 When 결과 화면이 뜨면 Then 계산 결과 대신 초과 안내와 목표 수정 안내가 보인다",
+      "Given 가정 보기를 펼침 When 보면 Then '환율 변동은 반영하지 않았어요'와 데이터 기준월이 보인다",
+      "Given 어떤 결과 상태든 When 화면 맨 아래를 보면 Then 면책 문구가 보인다",
+      "Given 조건 바의 입력 수정 When 누르면 Then 입력 화면에 현재 값이 채워져 있다"
+    ],
+    "done_when": [
+      "프론트 빌드·린트·테스트 통과",
+      "목 모드에서 미달·달성·초과 3가지 응답 화면 확인"
+    ],
+    "refs": [
+      "docs/srs.md#FR-RES-01, FR-RES-02, FR-RES-06, FR-RES-07"
+    ],
+    "issue": 49
+  },
+  {
+    "id": "T-042",
+    "title": "[front] 결과 화면 2: 3구간, 과거 수익률 고지, 월별 그래프",
+    "team": "A",
+    "area": [
+      "frontend"
+    ],
+    "priority": "must",
+    "week": 2,
+    "status": "ready",
+    "depends_on": [
+      "T-041",
+      "T-005"
+    ],
+    "requirements": [
+      "FR-RES-03",
+      "FR-RES-04",
+      "D-029",
+      "CP-04"
+    ],
+    "paths": [
+      "frontend/src/features/result/scenarios/**",
+      "frontend/src/features/result/chart/**"
+    ],
+    "summary": "ETF가 포함된 계획이면 좋았던 때·평균·나빴던 때를 나란히 보여주고 바로 아래에 과거 수익률 고지 한 줄을 둔다. 매달 자산이 쌓이는 꺾은선 그래프를 목표선과 함께 계산 시작월부터 보여준다. ETF 0%(적금만)이면 3구간 영역을 보여주지 않는다.",
+    "acceptance": [
+      "Given ETF가 포함된 계획 When 결과 화면이 뜨면 Then 3구간 3개 값과 그 바로 아래 과거 수익률 고지가 보인다",
+      "Given ETF 0% 계획 When 보면 Then 3구간 영역이 없다",
+      "Given 월별 시계열 When 그래프를 보면 Then 가로축이 계산 시작월부터이고 목표선이 함께 있다"
+    ],
+    "done_when": [
+      "프론트 빌드·린트·테스트 통과",
+      "목 모드에서 3구간 있음/없음 응답 확인"
+    ],
+    "refs": [
+      "docs/srs.md#FR-RES-03 수용 기준, FR-RES-04"
+    ],
+    "issue": 50
+  },
+  {
+    "id": "T-043",
+    "title": "[front] 입력 수정 복귀, 로그인 후 진입 분기, 되돌리기 토스트",
+    "team": "A",
+    "area": [
+      "frontend"
+    ],
+    "priority": "must",
+    "week": 2,
+    "status": "ready",
+    "depends_on": [
+      "T-041",
+      "T-004",
+      "T-005"
+    ],
+    "requirements": [
+      "FR-PLAN-04",
+      "FR-PLAN-05",
+      "FR-PLAN-06",
+      "FR-INP-11",
+      "D-035",
+      "D-041"
+    ],
+    "paths": [
+      "frontend/src/features/plan/**"
+    ],
+    "summary": "로그인 직후 계획이 있으면 결과 화면, 없으면 빈 입력 화면으로 보낸다(오래된 계획 질문 없음). 입력 수정에서 보유 자산 안내 문구를 재로그인 후에는 '시작월({시작월}) 당시 쓸 수 있던 돈'으로 바꾸고 '결과반영' 버튼은 두지 않는다. 적용 직후 되돌리기 토스트를 보이고(대화 적용은 10초), 누르면 undo API를 호출해 결과 화면을 갱신한다.",
+    "acceptance": [
+      "Given 계획이 있는 계정 When 로그인하면 Then 결과 화면이 보인다",
+      "Given 재로그인한 사용자 When 입력 수정의 보유 자산 칸을 보면 Then 안내가 '시작월(3월) 당시 쓸 수 있던 돈'이고 결과반영 버튼은 없다",
+      "Given 적용 직후 토스트 When 10초가 지나면 Then 토스트가 사라지고 되돌리기를 누를 수 없다",
+      "Given 토스트에서 되돌리기를 누름 When 응답이 오면 Then 결과 화면이 이전 계획으로 갱신되고 시작월 표시는 그대로다"
+    ],
+    "done_when": [
+      "프론트 빌드·린트·테스트 통과",
+      "목 모드에서 적용, 되돌리기, 409 PLAN_CHANGED 응답 처리 확인"
+    ],
+    "refs": [
+      "docs/srs.md#FR-PLAN-04 수용 기준",
+      "docs/srs.md#FR-PLAN-06 수용 기준(D-045)"
+    ],
+    "issue": 51
+  },
+  {
+    "id": "T-044",
+    "title": "[front] 대화창 기본: 메시지 목록, 질문 입력, 폴링, 되묻기·범위 밖 표시",
+    "team": "B",
+    "area": [
+      "frontend"
+    ],
+    "priority": "must",
+    "week": 2,
+    "status": "ready",
+    "depends_on": [
+      "T-004",
+      "T-005"
+    ],
+    "requirements": [
+      "FR-AI-01",
+      "FR-AI-04",
+      "FR-AI-06",
+      "FR-AI-09",
+      "NFR-USA-01"
+    ],
+    "paths": [
+      "frontend/src/features/chat/**"
+    ],
+    "summary": "결과 화면에 붙는 대화창을 만든다. 질문 전송(F-1), 1초 간격 폴링(F-2), PENDING 표시, messageType별 말풍선(ANSWER, CLARIFY, OUT_OF_SCOPE, FAILURE), 실패 안내 표시를 구현한다. 전송 중 다시 보낼 수 없게 막는다(409 ANSWER_PENDING). 목 모드로 먼저 개발한다.",
+    "acceptance": [
+      "Given 질문을 보냄 When 응답을 기다리면 Then 대기 표시가 보이고 입력 전송이 막힌다",
+      "Given FAILED 메시지 When 폴링으로 받으면 Then 실패 안내가 대화창에 보이고 결과 화면은 그대로다(FR-AI-04)",
+      "Given CLARIFY 메시지 When 받으면 Then 되묻는 문장이 보이고 비교 결과는 보이지 않는다",
+      "Given 401 응답 When 폴링 중 받으면 Then 로그인 화면으로 이동한다"
+    ],
+    "done_when": [
+      "프론트 빌드·린트·테스트 통과",
+      "목 모드에서 PENDING -> COMPLETED/FAILED 전환 확인"
+    ],
+    "refs": [
+      "docs/design/b-team-contracts.md F-1, F-2"
+    ],
+    "issue": 52
+  },
+  {
+    "id": "T-045",
+    "title": "[front] 대화창 비교 결과 카드와 '내 계획으로 적용' 버튼(최신만 활성)",
+    "team": "B",
+    "area": [
+      "frontend"
+    ],
+    "priority": "must",
+    "week": 2,
+    "status": "ready",
+    "depends_on": [
+      "T-044",
+      "T-043",
+      "T-005"
+    ],
+    "requirements": [
+      "FR-AI-06",
+      "FR-AI-07",
+      "FR-PLAN-04",
+      "D-016",
+      "D-022",
+      "D-041"
+    ],
+    "paths": [
+      "frontend/src/features/chat/comparison/**"
+    ],
+    "summary": "RECALC_RESULT 메시지에 현재 조건(내 계획)과 바꾼 조건의 숫자 비교 카드(F-4, display 그대로)를 보여주고 '내 계획으로 적용' 버튼을 둔다. 버튼은 가장 최근 비교에만 활성이고, 적용하면 확인창 없이 호출하고 결과 화면 전체를 갱신하며 되돌리기 토스트(T-043)를 띄운다. 되돌린 뒤에는 그 이전 카드들의 버튼을 모두 비활성으로 둔다(프론트 상태).",
+    "acceptance": [
+      "Given 비교 결과 두 개 When 화면을 보면 Then 첫 번째 카드의 적용 버튼은 비활성이고 마지막 카드만 활성이다",
+      "Given 비교 결과가 뜬 상태 When 적용 전에 결과 화면을 보면 Then 내 계획 값은 그대로다",
+      "Given 마지막 카드의 적용 버튼 When 누르면 Then 확인창 없이 적용되고 결과 화면이 갱신되며 토스트가 보인다",
+      "Given 적용 후 되돌림 When 대화창을 보면 Then 이전 카드의 적용 버튼이 모두 비활성이다",
+      "Given 적용 응답이 409 STALE_COMPARISON When 받으면 Then 최신 비교로 다시 하라는 안내가 보인다"
+    ],
+    "done_when": [
+      "프론트 빌드·린트·테스트 통과",
+      "목 모드에서 위 시나리오 확인"
+    ],
+    "refs": [
+      "docs/srs.md#FR-AI-07 수용 기준",
+      "docs/design/b-team-contracts.md F-4, A-1, A-2"
+    ],
+    "issue": 53
+  },
+  {
+    "id": "T-046",
+    "title": "[front] AI 설명 비동기 표시, 출처 링크, 설명 실패 안내",
+    "team": "B",
+    "area": [
+      "frontend"
+    ],
+    "priority": "must",
+    "week": 2,
+    "status": "ready",
+    "depends_on": [
+      "T-044",
+      "T-041",
+      "T-005"
+    ],
+    "requirements": [
+      "FR-AI-01",
+      "FR-AI-03",
+      "FR-AI-04",
+      "D-028"
+    ],
+    "paths": [
+      "frontend/src/features/chat/explanation/**"
+    ],
+    "summary": "결과 화면이 계산 결과를 그린 직후 설명 요청(F-3)을 보내고, 대화창에 설명이 뒤이어 도착하게 한다. 출처는 문서 제목 링크로 보여주고(상품명 포함 가능) 본문 문구는 서버 응답 그대로 쓴다. 설명이 실패해도 계산 결과는 그대로이고 실패 안내만 보인다.",
+    "acceptance": [
+      "Given 결과 화면이 뜸 When 계산 결과가 그려지면 Then 설명 요청이 자동으로 나가고 결과는 설명을 기다리지 않고 보인다",
+      "Given 설명이 도착 When 출처가 2개 이상이면 Then 서로 다른 기관의 출처 링크가 보인다",
+      "Given 설명이 FAILED When 받으면 Then 대화창에 실패 안내가 보이고 결과 화면은 그대로다"
+    ],
+    "done_when": [
+      "프론트 빌드·린트·테스트 통과",
+      "목 모드에서 설명 성공·실패 확인"
+    ],
+    "refs": [
+      "docs/srs.md#FR-AI-01, FR-AI-03, FR-AI-04",
+      "docs/design/b-team-contracts.md F-3"
+    ],
+    "issue": 54
+  },
+  {
+    "id": "T-047",
+    "title": "[front] 목 제거: 프론트를 실제 Spring API에 연결(로그인·입력·결과·적용·대화)",
+    "team": "common",
+    "area": [
+      "frontend"
+    ],
+    "priority": "must",
+    "week": 3,
+    "status": "ready",
+    "depends_on": [
+      "T-022",
+      "T-023",
+      "T-025",
+      "T-039",
+      "T-042",
+      "T-043",
+      "T-037",
+      "T-044",
+      "T-045",
+      "T-046"
+    ],
+    "requirements": [
+      "FR-INP-10",
+      "FR-PLAN-03",
+      "FR-PLAN-04",
+      "FR-AUTH-01"
+    ],
+    "paths": [
+      "frontend/src/api/**",
+      "frontend/src/mocks/**",
+      "frontend/src/features/auth/**",
+      "frontend/src/features/input/**",
+      "frontend/src/features/result/**",
+      "frontend/src/features/plan/**"
+    ],
+    "summary": "A팀 화면이 쓰던 목을 실제 API로 바꾸고 계약과 다른 응답 형식을 맞춘다. 로그인 -> 입력 -> 결과 -> 입력 수정 -> 재로그인 전체 흐름이 실서버로 도는지 확인한다. 이 작업은 통합 기간의 첫 작업이며 새 기능을 넣지 않는다.",
+    "acceptance": [
+      "Given 실서버 When 데모 계정으로 로그인해 입력하고 결과 보기를 누르면 Then 결과 화면이 서버 계산값으로 보인다",
+      "Given 로그아웃 후 재로그인 When 들어오면 Then 같은 계획과 시작월이 그대로 보인다",
+      "Given 범위 밖 입력 When 제출하면 Then 서버 422 안내가 칸별로 보인다"
+    ],
+    "done_when": [
+      "프론트 빌드·린트·테스트 통과",
+      "로컬에서 Spring+DB+프론트 조합으로 위 흐름 수동 확인 기록",
+      "./gradlew test 통과"
+    ],
+    "refs": [
+      "docs/design/b-team-contracts.md §3"
+    ],
+    "issue": 55
+  },
+  {
+    "id": "T-048",
+    "title": "[demo] 3서버 통합: 프론트 -> Spring -> ai-server -> Spring 대화 흐름 E2E",
+    "team": "common",
+    "area": [
+      "backend",
+      "ai-server",
+      "frontend"
+    ],
+    "priority": "must",
+    "week": 3,
+    "status": "ready",
+    "depends_on": [
+      "T-029",
+      "T-032",
+      "T-036",
+      "T-037",
+      "T-045",
+      "T-046",
+      "T-047"
+    ],
+    "requirements": [
+      "FR-AI-01",
+      "FR-AI-06",
+      "FR-AI-07",
+      "FR-PLAN-03",
+      "FR-PLAN-04",
+      "NFR-INT-03"
+    ],
+    "paths": [
+      "docker-compose.yml",
+      "docs/e2e-checklist.md",
+      "backend/src/test/java/com/moeun/backend/e2e/**"
+    ],
+    "summary": "세 서버를 함께 띄워 '결과 -> AI 설명 -> 대화로 조건 변경 -> 비교 -> 적용 -> 되돌리기' 전체를 실제 LLM으로 돌려 본다. 어긋나는 계약(키 표기 snake/camel, 시간 초과)을 찾아 고치고, ai 시간 초과값을 실측해 조정한다(TBD-33). 이 시점부터 새 기능은 넣지 않는다.",
+    "acceptance": [
+      "Given 세 서버가 떠 있을 때 When 월 저축액을 바꾸는 말을 하면 Then 대화창에 비교 결과가 뜨고 내 계획은 그대로다",
+      "Given 비교 결과 When 적용하면 Then 결과 화면이 갱신되고 되돌리기 토스트가 보이며 되돌리면 이전 계획으로 돌아온다",
+      "Given 범위 밖 값 When 말하면 Then 범위를 안내하며 되묻고 적용 버튼은 나타나지 않는다",
+      "Given ai-server를 중지한 상태 When 설명을 요청하면 Then 실패 안내만 보이고 결과 화면은 정상이다"
+    ],
+    "done_when": [
+      "docs/e2e-checklist.md의 모든 항목이 통과 표시됨",
+      "./gradlew test, uv run pytest, 프론트 테스트가 모두 통과"
+    ],
+    "refs": [
+      "docs/scope-review.md §3, §5-2",
+      "docs/design/b-team-contracts.md §0"
+    ],
+    "issue": 56
+  },
+  {
+    "id": "T-049",
+    "title": "[demo] 데모 대화 시나리오 3~4개 고정과 LLM 회귀 점검",
+    "team": "B",
+    "area": [
+      "ai-server",
+      "docs"
+    ],
+    "priority": "must",
+    "week": 3,
+    "status": "ready",
+    "depends_on": [
+      "T-048"
+    ],
+    "requirements": [
+      "FR-AI-06",
+      "FR-AI-07",
+      "FR-AI-09",
+      "CP-06",
+      "NFR-USA-01"
+    ],
+    "paths": [
+      "docs/demo-scenarios.md",
+      "ai-server/tests/scenarios/**"
+    ],
+    "summary": "데모에서 보여줄 대화 시나리오 3~4개(월 저축액 변경, 비중 변경, 기간 변경, 범위 밖 질문·범위 밖 값)를 고정하고 같은 시나리오를 여러 번 돌려 LLM 비결정성으로 깨지는지 확인한다. 깨지면 프롬프트·검증으로 고치고 안전하지 않으면 시나리오에서 제외한다. 새 기능은 넣지 않는다.",
+    "acceptance": [
+      "Given 고정한 시나리오 각각 When 실제 LLM으로 5회 실행하면 Then 규칙에 어긋나는 결과(누적, 상품명 본문 노출, 숫자 불일치)가 없다",
+      "Given 시나리오 문서 When 팀원이 보면 Then 입력 발화와 기대 화면이 적혀 있다"
+    ],
+    "done_when": [
+      "docs/demo-scenarios.md가 팀 승인",
+      "uv run pytest 통과",
+      "실행 결과가 docs/demo-scenarios.md에 기록됨"
+    ],
+    "refs": [
+      "docs/scope-review.md §5 위험 2"
+    ],
+    "issue": 57
+  },
+  {
+    "id": "T-050",
+    "title": "[demo] 데모 계정·시드·시연 입력 세트 준비",
+    "team": "common",
+    "area": [
+      "backend",
+      "docs"
+    ],
+    "priority": "must",
+    "week": 3,
+    "status": "ready",
+    "depends_on": [
+      "T-007",
+      "T-008"
+    ],
+    "requirements": [
+      "FR-AUTH-01",
+      "FR-DATA-01",
+      "FR-DATA-02",
+      "NFR-AVL-01"
+    ],
+    "paths": [
+      "backend/src/main/resources/seed/demo/**",
+      "docs/demo-setup.md"
+    ],
+    "summary": "동시 사용 인원만큼 데모 계정(해시 비밀번호), 시연용 입력 세트(미달 사례, 달성 사례, 초과 사례)와 환경 초기화 절차를 준비한다. 데모 직전에 DB를 깨끗한 상태로 되돌리는 방법을 문서로 남긴다.",
+    "acceptance": [
+      "Given 빈 DB When 시드를 실행하면 Then 데모 계정 N개와 활성 데이터 버전이 만들어진다",
+      "Given 데모 후 When 초기화 절차를 실행하면 Then 계획·대화가 지워지고 다시 시작할 수 있다"
+    ],
+    "done_when": [
+      "docs/demo-setup.md 절차대로 새 환경에서 재현됨",
+      "./gradlew test 통과"
+    ],
+    "refs": [
+      "docs/srs.md#FR-AUTH-01"
+    ],
+    "issue": 58
+  },
+  {
+    "id": "T-051",
+    "title": "[docs] 문구·추천 금지·면책·과거 수익률 고지 전체 점검",
+    "team": "common",
+    "area": [
+      "frontend",
+      "backend",
+      "ai-server"
+    ],
+    "priority": "must",
+    "week": 3,
+    "status": "ready",
+    "depends_on": [
+      "T-048"
+    ],
+    "requirements": [
+      "CP-05",
+      "CP-06",
+      "NFR-USA-01",
+      "NFR-USA-02",
+      "FR-RES-07",
+      "D-028",
+      "D-029"
+    ],
+    "paths": [
+      "copy/copy.ko.yml",
+      "docs/copy-review.md"
+    ],
+    "summary": "모든 화면과 AI 대화 결과에서 '추천' 표현, 본문 상품명 노출, 면책 문구·과거 수익률 고지 누락, 해요체·격식체 규칙을 점검하고 문구표만 고친다. 금융 데모에서 치명적인 문구 위험을 마지막으로 확인한다.",
+    "acceptance": [
+      "Given 모든 결과 상태 화면 When 점검하면 Then 맨 아래 면책 문구와 3구간 아래 과거 수익률 고지가 있다",
+      "Given AI 대화 시나리오 결과 When 본문을 보면 Then 상품명 대신 'S&P500 추종 ETF'로만 표현돼 있다",
+      "Given 문구표 When 점검하면 Then 코드에 하드코딩된 고정 문구가 남아 있지 않다"
+    ],
+    "done_when": [
+      "docs/copy-review.md의 점검표가 모두 체크됨",
+      "프론트·백엔드·ai-server 테스트가 통과"
+    ],
+    "refs": [
+      "docs/srs.md#CP-05, CP-06, NFR-USA-02"
+    ],
+    "issue": 59
+  },
+  {
+    "id": "T-052",
+    "title": "[demo] 통합 버그 수정 1(새 기능 없음)",
+    "team": "common",
+    "area": [
+      "backend",
+      "ai-server",
+      "frontend"
+    ],
+    "priority": "must",
+    "week": 3,
+    "status": "ready",
+    "depends_on": [
+      "T-048",
+      "T-049"
+    ],
+    "requirements": [
+      "FR-AI-07",
+      "FR-PLAN-04",
+      "FR-INP-10"
+    ],
+    "paths": [
+      "backend/**",
+      "ai-server/**",
+      "frontend/**"
+    ],
+    "summary": "T-048 통합과 T-049 시나리오 점검에서 나온 버그를 고친다. 각 버그는 별도 Issue로 만들어 연결하고 새 기능과 요구사항 변경은 하지 않는다. 한 파일을 동시에 고치지 않도록 버그별 담당을 나눈다.",
+    "acceptance": [
+      "Given 통합 점검에서 나온 버그 목록 When 수정하면 Then 각 버그에 재현 절차와 회귀 테스트가 있다",
+      "Given 수정 PR When 보면 Then 요구사항·API 계약 변경이 없다"
+    ],
+    "done_when": [
+      "./gradlew test, uv run pytest, 프론트 테스트 통과",
+      "버그 Issue가 모두 닫히거나 이월 사유가 적힘"
+    ],
+    "refs": [
+      "docs/scope-review.md §3"
+    ],
+    "issue": 60
+  },
+  {
+    "id": "T-053",
+    "title": "[demo] 통합 버그 수정 2와 데모 안정화(새 기능 없음)",
+    "team": "common",
+    "area": [
+      "backend",
+      "ai-server",
+      "frontend"
+    ],
+    "priority": "must",
+    "week": 3,
+    "status": "ready",
+    "depends_on": [
+      "T-052"
+    ],
+    "requirements": [
+      "NFR-AVL-01",
+      "FR-AI-04"
+    ],
+    "paths": [
+      "backend/**",
+      "ai-server/**",
+      "frontend/**"
+    ],
+    "summary": "남은 버그를 고치고 데모 환경 안정성(재기동 후 PENDING 메시지 복구, 기동 순서, 시간 초과 표시)을 확인한다. 새 기능은 넣지 않는다.",
+    "acceptance": [
+      "Given 서버를 재기동 When PENDING 메시지가 있었으면 Then 복구되거나 FAILED로 끝난다",
+      "Given T-052 이후 남은 버그 목록 When 확인하면 Then 모두 고쳤거나 시나리오에서 제외했다"
+    ],
+    "done_when": [
+      "./gradlew test, uv run pytest, 프론트 테스트 통과"
+    ],
+    "refs": [
+      "backend/.claude/rules/modulith.md 이벤트 표"
+    ],
+    "issue": 61
+  },
+  {
+    "id": "T-054",
+    "title": "[demo] 데모 리허설 1(전체 시나리오, 시간 측정)",
+    "team": "common",
+    "area": [
+      "docs"
+    ],
+    "priority": "must",
+    "week": 3,
+    "status": "ready",
+    "depends_on": [
+      "T-049",
+      "T-050",
+      "T-051",
+      "T-052"
+    ],
+    "requirements": [
+      "FR-AI-01",
+      "FR-AI-07",
+      "FR-PLAN-04"
+    ],
+    "paths": [
+      "docs/rehearsal-1.md"
+    ],
+    "summary": "팀이 처음부터 끝까지 데모를 한 번 돌려 시나리오, 소요 시간, 막히는 지점을 기록한다. 발견한 문제는 T-053에서 고친다.",
+    "acceptance": [
+      "Given 데모 시나리오 When 처음부터 끝까지 진행하면 Then 소요 시간과 문제 목록이 docs/rehearsal-1.md에 남는다"
+    ],
+    "done_when": [
+      "rehearsal-1.md가 팀 공유됨",
+      "문제마다 Issue가 연결됨"
+    ],
+    "refs": [
+      "docs/scope-review.md §3"
+    ],
+    "issue": 62
+  },
+  {
+    "id": "T-055",
+    "title": "[demo] 데모 리허설 2와 최종 실행 문서",
+    "team": "common",
+    "area": [
+      "docs"
+    ],
+    "priority": "must",
+    "week": 3,
+    "status": "ready",
+    "depends_on": [
+      "T-053",
+      "T-054"
+    ],
+    "requirements": [
+      "NFR-AVL-01"
+    ],
+    "paths": [
+      "docs/rehearsal-2.md",
+      "README.md",
+      "docs/demo-setup.md"
+    ],
+    "summary": "수정 후 한 번 더 전체 리허설을 하고 실행 방법(README, 환경 변수, 시드, 초기화)을 최종 정리한다. 데모 당일 재현이 가능한지 새 환경에서 확인한다.",
+    "acceptance": [
+      "Given 새 환경 When README 절차만 따라 하면 Then 세 서버가 뜨고 데모가 가능하다",
+      "Given 리허설 2 When 시나리오를 끝까지 진행하면 Then 중단 없이 끝난다"
+    ],
+    "done_when": [
+      "rehearsal-2.md 기록",
+      "README의 실행 절차가 실제로 검증됨"
+    ],
+    "refs": [
+      "docs/scope-review.md §3"
+    ],
+    "issue": 63
+  },
+  {
+    "id": "T-056",
+    "title": "[chat] 조건 변경 비교 API(FR-CMP-02) [2주차 말 판단 1순위]",
+    "team": "B",
+    "area": [
+      "backend"
+    ],
+    "priority": "should",
+    "week": 3,
+    "status": "ready",
+    "depends_on": [
+      "T-024",
+      "T-048"
+    ],
+    "requirements": [
+      "FR-CMP-02",
+      "FR-CMP-01",
+      "CP-07",
+      "D-045"
+    ],
+    "paths": [
+      "backend/src/main/java/com/moeun/backend/chat/web/compare/**",
+      "backend/src/test/java/com/moeun/backend/chat/compare/**"
+    ],
+    "summary": "2주차 말 판단 후 되살린다. 월 저축액·비중·적금 금리·기한 중 하나 이상을 바꾸면 현재 조건과 바꾼 조건을 나란히 돌려주는 API다. 계산은 A팀 CalcComparison(T-024)을 재사용하고 저장하지 않는다. 기한 없음 등 범위 밖 분기는 지원하지 않는다. 3주차 1~2일 안에 끝내지 못하면 포기한다.",
+    "acceptance": [
+      "Given 현재 계획 When 월 저축액과 기한 두 개를 바꿔 비교를 요청하면 Then current, changed, diff가 오고 내 계획은 그대로다",
+      "Given 허용 범위 밖 값 When 요청하면 Then 422 VALIDATION_FAILED다",
+      "Given ETF 비중 입력 When 비교하면 Then 그 비중의 위험 범위(3구간)가 함께 온다(FR-CMP-01)"
+    ],
+    "done_when": [
+      "./gradlew test 통과",
+      "./gradlew test --tests ModularityTests 통과",
+      "./gradlew checkstyleMain checkstyleTest 통과"
+    ],
+    "refs": [
+      "docs/srs.md#FR-CMP-02(Should 1순위)",
+      "docs/scope-review.md §3 빼는 순서 6"
+    ],
+    "issue": 64
+  },
+  {
+    "id": "T-057",
+    "title": "[front] 조건 변경 비교 영역과 '원래대로' [2주차 말 판단 1순위]",
+    "team": "B",
+    "area": [
+      "frontend"
+    ],
+    "priority": "should",
+    "week": 3,
+    "status": "ready",
+    "depends_on": [
+      "T-056",
+      "T-045"
+    ],
+    "requirements": [
+      "FR-CMP-02",
+      "FR-CMP-03",
+      "D-046"
+    ],
+    "paths": [
+      "frontend/src/features/compare/**"
+    ],
+    "summary": "2주차 말 판단 후 되살린다. 대화창 비교 카드 컴포넌트를 재사용해 결과 화면에 비교 영역을 만들고, '원래대로'를 누르면 바꾼 조건을 없앤다(프론트 상태만). 적용 요청은 A팀 확인 흐름(T-063)으로 넘긴다.",
+    "acceptance": [
+      "Given 비교 영역 When 조건 둘을 바꾸면 Then 현재 조건과 바꾼 조건이 나란히 보인다",
+      "Given 바꾼 조건이 있는 상태 When 원래대로를 누르면 Then 현재 조건 기준으로 돌아가고 저장은 일어나지 않는다"
+    ],
+    "done_when": [
+      "프론트 빌드·린트·테스트 통과",
+      "T-048 E2E 체크리스트의 기존 항목이 깨지지 않음"
+    ],
+    "refs": [
+      "docs/srs.md#FR-CMP-02, FR-CMP-03"
+    ],
+    "issue": 65
+  },
+  {
+    "id": "T-058",
+    "title": "[calc] 대안 3종 값 산출 API(FR-ALT-01·03) [2주차 말 판단 2순위]",
+    "team": "B",
+    "area": [
+      "backend"
+    ],
+    "priority": "should",
+    "week": 3,
+    "status": "ready",
+    "depends_on": [
+      "T-024",
+      "T-048"
+    ],
+    "requirements": [
+      "FR-ALT-01",
+      "FR-ALT-03",
+      "D-014",
+      "D-020"
+    ],
+    "paths": [
+      "backend/src/main/java/com/moeun/backend/chat/web/alternative/**",
+      "backend/src/test/java/com/moeun/backend/chat/alternative/**"
+    ],
+    "summary": "2주차 말 판단 후 되살린다. 기준 시나리오로 미달일 때만 대안을 돌려준다. 월 저축액, 비중, 기한(사용자가 입력한 기간까지) 하나씩만 바꿔 CalcComparison으로 계산한다. 목표 기한·월 저축액이 항상 있으므로 기한 없음·모름 분기는 없다.",
+    "acceptance": [
+      "Given 기준 시나리오로 미달인 계획 When 대안을 요청하면 Then 월 저축액·기한·비중 3가지가 각각 하나의 조건만 바꾼 결과로 온다",
+      "Given 달성하는 계획 When 대안을 요청하면 Then 대안 없음 응답이다(FR-ALT-01)",
+      "Given 기한을 늘리는 입력이 허용 범위 밖 When 요청하면 Then 422이다"
+    ],
+    "done_when": [
+      "./gradlew test 통과",
+      "./gradlew test --tests ModularityTests 통과",
+      "./gradlew checkstyleMain checkstyleTest 통과"
+    ],
+    "refs": [
+      "docs/srs.md#FR-ALT-01, FR-ALT-03",
+      "docs/scope-review.md §3 빼는 순서 6"
+    ],
+    "issue": 66
+  },
+  {
+    "id": "T-059",
+    "title": "[front] 대안 3종 카드와 기한 입력 그래프 [2주차 말 판단 2순위]",
+    "team": "B",
+    "area": [
+      "frontend"
+    ],
+    "priority": "should",
+    "week": 3,
+    "status": "ready",
+    "depends_on": [
+      "T-058",
+      "T-042"
+    ],
+    "requirements": [
+      "FR-ALT-02",
+      "FR-ALT-04",
+      "D-020",
+      "D-039"
+    ],
+    "paths": [
+      "frontend/src/features/alternative/**"
+    ],
+    "summary": "2주차 말 판단 후 되살린다. 미달일 때만 '월 저축액을 바꾸면 / 기한을 늘리면 / 비중을 바꾸면' 카드를 보여주고, 기한 카드는 입력 전에는 입력칸과 안내만 있는 빈 카드이며 입력하면 그 기간까지의 그래프를 카드에 보여준다. 그래프는 이 3가지만 보여준다.",
+    "acceptance": [
+      "Given 미달 계획 When 결과 화면이 뜨면 Then 카드 3개가 보이고 기한 카드는 빈 카드다",
+      "Given 기한 카드에서 기간 입력 When 확인하면 Then 그 기간까지의 그래프가 카드에 보인다",
+      "Given 달성 계획 When 결과 화면이 뜨면 Then 대안 영역이 없다"
+    ],
+    "done_when": [
+      "프론트 빌드·린트·테스트 통과"
+    ],
+    "refs": [
+      "docs/srs.md#FR-ALT-02 수용 기준"
+    ],
+    "issue": 67
+  },
+  {
+    "id": "T-060",
+    "title": "[plan] 대안·비교 적용 확인창과 취소(FR-PLAN-01·02) [2주차 말 판단 3순위]",
+    "team": "A",
+    "area": [
+      "frontend",
+      "backend"
+    ],
+    "priority": "should",
+    "week": 3,
+    "status": "wont",
+    "depends_on": [
+      "T-025",
+      "T-057",
+      "T-059"
+    ],
+    "requirements": [
+      "FR-PLAN-01",
+      "FR-PLAN-02",
+      "FR-ALT-04",
+      "D-016",
+      "D-046"
+    ],
+    "paths": [
+      "frontend/src/features/plan/confirm/**",
+      "backend/src/main/java/com/moeun/backend/plan/web/**"
+    ],
+    "summary": "2주차 말 판단 후 되살린다. 대안 카드나 비교 영역의 '내 계획으로 적용'을 누르면 바뀌는 내용을 보여주는 확인창을 띄우고, 취소하면 아무것도 바뀌지 않으며 적용하기면 기존 적용 API(T-025)와 되돌리기 토스트를 쓴다. 대화 적용은 확인창을 거치지 않는다.",
+    "acceptance": [
+      "Given 대안 카드 When 적용을 누르면 Then 바뀌는 내용이 있는 확인창이 뜨고 내 계획은 그대로다",
+      "Given 확인창 When 취소를 누르면 Then 아무것도 적용되지 않는다",
+      "Given 확인창 When 적용하기를 누르면 Then 결과 화면이 갱신되고 되돌리기 토스트가 보인다",
+      "Given 대화창 적용 When 누르면 Then 확인창이 뜨지 않는다(D-016)"
+    ],
+    "done_when": [
+      "프론트 빌드·린트·테스트 통과",
+      "./gradlew test 통과"
+    ],
+    "refs": [
+      "docs/srs.md#FR-PLAN-01 수용 기준"
+    ],
+    "issue": 68,
+    "note": "D-093(2026-11-23)으로 범위에서 뺐다. P-6 POST /api/plan/apply 미구현."
+  },
+  {
+    "id": "T-061",
+    "title": "[ai] 질문 예시 버튼(FR-AI-08) [2주차 말 판단 4순위]",
+    "team": "B",
+    "area": [
+      "frontend",
+      "ai-server"
+    ],
+    "priority": "should",
+    "week": 3,
+    "status": "ready",
+    "depends_on": [
+      "T-044",
+      "T-030"
+    ],
+    "requirements": [
+      "FR-AI-08",
+      "FR-AI-09"
+    ],
+    "paths": [
+      "frontend/src/features/chat/suggestions/**",
+      "copy/copy.ko.yml"
+    ],
+    "summary": "2주차 말 판단 후 되살린다. 무엇을 물어야 할지 모르는 사용자를 위해 자주 묻는 질문(월 저축액·비중·적금 금리·기한 변경, ETF 위험 설명) 버튼을 문구표에서 읽어 보여준다. 누르면 해당 질문을 보낸다.",
+    "acceptance": [
+      "Given 대화창 When 열면 Then 질문 예시 버튼이 보인다",
+      "Given 예시 버튼 When 누르면 Then 그 문장이 질문으로 전송된다",
+      "Given 예시 문구 When 보면 Then '추천' 표현이 없다"
+    ],
+    "done_when": [
+      "프론트 빌드·린트·테스트 통과",
+      "uv run pytest 통과"
+    ],
+    "refs": [
+      "docs/srs.md#FR-AI-08"
+    ],
+    "issue": 69
+  },
+  {
+    "id": "T-062",
+    "title": "[ai] 설명 다시 요청(FR-AI-05) [2주차 말 판단 5순위]",
+    "team": "B",
+    "area": [
+      "frontend",
+      "backend"
+    ],
+    "priority": "should",
+    "week": 3,
+    "status": "ready",
+    "depends_on": [
+      "T-035",
+      "T-046"
+    ],
+    "requirements": [
+      "FR-AI-05",
+      "FR-AI-04"
+    ],
+    "paths": [
+      "frontend/src/features/chat/retry/**",
+      "backend/src/main/java/com/moeun/backend/chat/web/**"
+    ],
+    "summary": "2주차 말 판단 후 되살린다. 설명 실패나 불만족 때 '설명 다시 요청'을 눌러 같은 엔드포인트(retryOfMessageId)로 새 설명을 받는다. 이미 PENDING이면 중복 요청을 막는다.",
+    "acceptance": [
+      "Given 실패한 설명 When 다시 요청하면 Then 새 EXPLANATION 메시지가 PENDING으로 생긴다",
+      "Given 설명이 PENDING When 다시 요청하면 Then 409 ANSWER_PENDING이다"
+    ],
+    "done_when": [
+      "./gradlew test 통과",
+      "프론트 빌드·린트·테스트 통과"
+    ],
+    "refs": [
+      "docs/srs.md#FR-AI-05",
+      "docs/design/b-team-contracts.md F-3"
+    ],
+    "issue": 70
+  },
+  {
+    "id": "T-063",
+    "title": "[ai] LangGraph 전환 [2주차 말 판단 마지막 순위]",
+    "team": "B",
+    "area": [
+      "ai-server"
+    ],
+    "priority": "should",
+    "week": 3,
+    "status": "blocked",
+    "depends_on": [
+      "T-048"
+    ],
+    "requirements": [
+      "NFR-INT-03"
+    ],
+    "paths": [
+      "ai-server/app/llm/**",
+      "ai-server/tests/**"
+    ],
+    "summary": "Q-043 결정 대기(권장안 A로 진행 가능). 권장안 A는 SDK 루프로 Must를 끝내고 2주차 말에 전환 여부를 판단하는 것이다. 전환하면 기존 테스트 통과가 완료 기준이고 노드는 6개 이내다. 사용자에게 보이는 기능은 늘지 않으므로 마지막 순위다.",
+    "acceptance": [
+      "Given 전환 전 모든 ai-server 테스트 When 전환 후 실행하면 Then 같은 결과로 통과한다",
+      "Given 되묻기와 계산 도구 호출 시나리오 When 실행하면 Then 전환 전과 같은 messageType이 나온다"
+    ],
+    "done_when": [
+      "uv run pytest 통과",
+      "uv run ruff check . 와 uv run mypy 통과",
+      "T-049 시나리오 회귀가 통과"
+    ],
+    "refs": [
+      "docs/design/alignment.md 3-3",
+      "docs/open-questions.md Q-043"
+    ],
+    "issue": 71
+  },
+  {
+    "id": "T-064",
+    "title": "[calc] PlanContextProvider: planContext 생성(C-1a)",
+    "team": "A",
+    "area": [
+      "backend"
+    ],
+    "priority": "must",
+    "week": 2,
+    "status": "ready",
+    "depends_on": [
+      "T-011",
+      "T-020",
+      "T-021",
+      "T-024"
+    ],
+    "requirements": [
+      "FR-AI-02",
+      "FR-AI-06",
+      "NFR-INT-01",
+      "D-030",
+      "D-045",
+      "D-060",
+      "D-061"
+    ],
+    "paths": [
+      "backend/src/main/java/com/moeun/backend/calc/PlanContextProvider.java",
+      "backend/src/main/java/com/moeun/backend/calc/PlanRunRef.java",
+      "backend/src/main/java/com/moeun/backend/calc/PlanContextView.java",
+      "backend/src/main/java/com/moeun/backend/calc/ConditionsView.java",
+      "backend/src/main/java/com/moeun/backend/calc/application/PlanContextProviderImpl.java",
+      "backend/src/test/java/com/moeun/backend/calc/PlanContextProviderTest.java",
+      "backend/src/test/java/com/moeun/backend/calc/PlanContextSerializationTest.java",
+      "backend/.claude/rules/persistence.md"
+    ],
+    "summary": "calc 공개 API PlanContextProvider(findPlanRun, findForCalcRun, findForCurrentPlan)와 PlanContextView·ConditionsView·PlanRunRef를 만든다. 소유권은 2단계(calc_run 조회 후 plan 공개 API findVersion, JOIN 금지), QUESTION은 #29 결과 조회 서비스를 재사용, display는 #28 공유 ResultDisplayBuilder, 직렬화는 계약 fixture와 같다(G-5b). persistence.md에 calc_run 소유권 예외 1줄(G-13). planContext 계약 G-7·G-5b·G-13.",
+    "acceptance": [
+      "Given 내 PLAN 기록 calcRunId When findForCalcRun을 부르면 Then 그 기록 기준의 PlanContextView가 오고 baselineScenario는 인자 값이다",
+      "Given 없는·남의·CHAT 기록 calcRunId When findPlanRun·findForCalcRun을 부르면 Then 모두 empty다",
+      "Given 계획이 없는 회원 When findForCurrentPlan을 부르면 Then empty다",
+      "Given 계약 부록 A 입력 When 직렬화하면 Then fixture와 같고(숫자 스케일 무시) memberId 키가 없으며 isAchieved 키가 있다"
+    ],
+    "done_when": [
+      "./gradlew test 통과",
+      "./gradlew test --tests ModularityTests 통과",
+      "./gradlew checkstyleMain checkstyleTest 통과"
+    ],
+    "refs": [
+      "docs/design/contracts/plan-context.md C1a-10, C1a-13",
+      "docs/design/contracts/plan-context-proposal.md G-5b, G-7, G-13"
+    ],
+    "issue": 78
+  }
 ]

@@ -84,7 +84,7 @@
 | P-3 | `PUT /api/plan` | 입력 저장(새 목표 세우기·입력 수정): 검증 → 저장 → 계산 → 결과, **한 트랜잭션** | `200 PlanView` | `calc.web`(A) | 예 | Must |
 | P-4 | `GET /api/plan` | 현재 계획·결과 조회 | `200 PlanView` | `calc.web`(A) | 예 | Must |
 | P-5 | `POST /api/plan/undo` | 되돌리기(직전 1단계) | `200 {revision}` | `plan.web`(A) | 예 | Must |
-| P-6 | `POST /api/plan/apply` | 대안·비교 결과 적용 | `200 {revision}` | `plan.web`(A) | 예 | Should(경로 예약만, #68) |
+| P-6 | `POST /api/plan/apply` | 대안·비교 결과 적용 | `200 {revision}` | `plan.web`(A) | 예 | **구현하지 않음(D-093, 2026-11-23)** — 경로 예약만 남기고 #68을 범위에서 뺐다 |
 
 - 대화 비교 적용은 F-5(#12-b)다. P-6은 대화와 무관하다.
 - `/api/auth/me`는 두지 않는다. 왜: 앱 시작·새로고침 때 P-4 하나로 "로그인 여부(401) / 계획 없음(409) / 결과(200)"가 갈린다.
@@ -611,6 +611,8 @@ FR-PLAN-04, D-013, D-041, D-044, D-068, C12b-7-4.
 - 토스트가 들고 있는 값은 직전 적용 응답(F-5, P-6)의 `revision`. 되돌리기 토스트는 적용 직후에만 띄운다(P-3 뒤에는 없음).
 
 ## C12a-9. P-6 대안·비교 적용 `POST /api/plan/apply` — Should, 경로 예약만
+
+> **[D-093, 2026-11-23] 구현하지 않는다.** moeun #68을 범위에서 뺐다(FR-PLAN-01·02 Won't). 경로 예약 기록은 나중에 되살릴 때를 위해 그대로 남긴다. 대화 적용 F-5(#12-b)와 되돌리기 P-5는 영향이 없다.
 
 - 경로 `POST /api/plan/apply`, 성공 `200 {revision}`, `plan.web`, `PlanApplyService.apply(…, expectedBaseVersionId=null)` 재사용만 예약한다. 요청 모양·오류·목은 **#68**(Should)에서 2주차 말에 확정한다. #33(Must)은 P-6을 들고 있지 않다. 왜: Should를 Must Issue에 두면 Must 완료를 막는다.
 - 대화 적용은 F-5뿐이다.
