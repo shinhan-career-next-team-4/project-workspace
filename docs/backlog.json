@@ -2490,7 +2490,7 @@
   ],
   "priority": "should",
   "week": 3,
-  "status": "wont",
+  "status": "ready",
   "depends_on": [
    "T-025",
    "T-057",
@@ -2522,7 +2522,7 @@
    "docs/srs.md#FR-PLAN-01 수용 기준"
   ],
   "issue": 68,
-  "note": "D-093(2026-11-23)으로 범위에서 뺐다. P-6 POST /api/plan/apply 미구현."
+  "note": "D-093으로 뺐다가 D-094(2026-11-23)로 되살렸다. 계약 #246, 백엔드 #250, 프론트 #259, 대안 카드 #258."
  },
  {
   "id": "T-061",
