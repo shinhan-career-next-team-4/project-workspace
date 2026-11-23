@@ -84,7 +84,7 @@
 | P-3 | `PUT /api/plan` | 입력 저장(새 목표 세우기·입력 수정): 검증 → 저장 → 계산 → 결과, **한 트랜잭션** | `200 PlanView` | `calc.web`(A) | 예 | Must |
 | P-4 | `GET /api/plan` | 현재 계획·결과 조회 | `200 PlanView` | `calc.web`(A) | 예 | Must |
 | P-5 | `POST /api/plan/undo` | 되돌리기(직전 1단계) | `200 {revision}` | `plan.web`(A) | 예 | Must |
-| P-6 | `POST /api/plan/apply` | 대안·비교 결과 적용 | `200 {revision}` | `plan.web`(A) | 예 | Should(#68, D-096). 최종 모양은 moeun `docs/api/frontend-api.md` C12a-9(#246) |
+| P-6 | `POST /api/plan/apply` | 대안·비교 결과 적용 | `200 {revision}` | `plan.web`(A) | 예 | Should(#68, D-094). 최종 모양은 moeun `docs/api/frontend-api.md` C12a-9(#246) |
 
 - 대화 비교 적용은 F-5(#12-b)다. P-6은 대화와 무관하다.
 - `/api/auth/me`는 두지 않는다. 왜: 앱 시작·새로고침 때 P-4 하나로 "로그인 여부(401) / 계획 없음(409) / 결과(200)"가 갈린다.
@@ -612,7 +612,7 @@ FR-PLAN-04, D-013, D-041, D-044, D-068, C12b-7-4.
 
 ## C12a-9. P-6 대안·비교 적용 `POST /api/plan/apply` — Should, 경로 예약만
 
-> **[D-096, 2026-11-23] 되살렸다**(D-093 변경). 요청 모양·검사 순서·오류·목은 moeun #246에서 확정했고 원본은 moeun `docs/api/frontend-api.md` C12a-9다. 백엔드 #250, 프론트 #259.
+> **[D-094, 2026-11-23] 되살렸다**(D-093 변경). 요청 모양·검사 순서·오류·목은 moeun #246에서 확정했고 원본은 moeun `docs/api/frontend-api.md` C12a-9다. 백엔드 #250, 프론트 #259.
 
 - 경로 `POST /api/plan/apply`, 성공 `200 {revision}`, `plan.web`, `PlanApplyService.apply(…, expectedBaseVersionId=null)` 재사용만 예약한다. 요청 모양·오류·목은 **#68**(Should)에서 2주차 말에 확정한다. #33(Must)은 P-6을 들고 있지 않다. 왜: Should를 Must Issue에 두면 Must 완료를 막는다.
 - 대화 적용은 F-5뿐이다.
